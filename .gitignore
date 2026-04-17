@@ -5,3 +5,5 @@ __pycache__/
 *.pyd
 *.blend1
 *.blend2
+/ImportFile
+/ExportFile

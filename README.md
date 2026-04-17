@@ -4,12 +4,37 @@
 
 `GN AI JSON Exporter` exports Blender `Geometry Nodes` trees into AI-readable JSON files.
 
-The exporter supports:
+The addon currently supports two directions:
 
-- one **main tree JSON**
-- multiple **group tree JSON** files exported separately
+- **Export** Blender Geometry Nodes into AI-readable JSON
+- **Import** AI-generated build JSON into an existing Geometry Nodes tree
 
-This separation helps AI read large node graphs incrementally instead of loading every nested group into a single oversized JSON file.
+This makes it possible to:
+
+1. export an existing node tree for AI analysis
+2. ask AI to generate a new node graph in a supported JSON format
+3. import that JSON back into Blender with one click
+
+---
+
+## Supported JSON Formats
+
+The addon currently works with **two different JSON purposes**:
+
+### 1. `geometry_nodes_ai_json`
+Used for **analysis / documentation / AI understanding**.
+
+This is the exporter format.
+It is designed so AI can read and understand an existing Geometry Nodes graph.
+
+### 2. `geometry_nodes_ai_build`
+Used for **building / importing / generating nodes in Blender**.
+
+This is the importer format.
+It is the format AI should generate if you want Blender to create a node graph from JSON.
+
+> Important: the importer does **not** read the exported analysis JSON directly.
+> It reads the dedicated build format: `geometry_nodes_ai_build`.
 
 ---
 
@@ -422,11 +447,330 @@ This export format is suitable for prompts such as:
 
 ---
 
+## `geometry_nodes_ai_build` Format
+
+The following describes the JSON structure for the build format, which is used by the importer.
+
+### Top-level fields
+
+The importer currently supports these top-level fields:
+
+- `format`
+  - must be exactly: `geometry_nodes_ai_build`
+
+- `format_version`
+  - optional
+  - recommended value: `1`
+
+- `clear_existing_nodes`
+  - optional
+  - boolean
+  - if `true`, existing nodes in the target tree are cleared before import
+  - if omitted, Blender uses the UI option `導入前清空節點`
+
+- `nodes`
+  - required
+  - array of node definitions
+
+- `links`
+  - optional
+  - array of links between nodes
+
+### Node Definition
+
+Each entry in `nodes` represents one node to create.
+
+#### Supported node fields
+
+- `id`
+  - recommended
+  - unique identifier used by `links`
+  - should be unique within the JSON
+
+- `bl_idname`
+  - required
+  - Blender node type identifier
+  - examples:
+    - `NodeGroupInput`
+    - `NodeGroupOutput`
+    - `GeometryNodeSubdivideMesh`
+    - `ShaderNodeMath`
+
+- `name`
+  - optional
+  - Blender node name
+
+- `label`
+  - optional
+  - node label shown in UI
+
+- `location`
+  - optional
+  - array: `[x, y]`
+
+- `width`
+  - optional
+  - numeric node width
+
+- `mute`
+  - optional
+  - boolean
+
+- `hide`
+  - optional
+  - boolean
+
+- `properties`
+  - optional
+  - object of Blender node properties
+  - used for settings such as:
+    - `operation`
+    - `data_type`
+    - `mode`
+    - `input_type`
+  - unsupported properties are ignored
+
+- `inputs`
+  - optional
+  - object where each key is an input socket name and each value is the default value to set
+
+### Link Definition
+
+Each entry in `links` describes one connection.
+
+#### Supported link fields
+
+- `from_node`
+  - required
+  - the source node `id`
+
+- `from_socket`
+  - required
+  - output socket name on the source node
+
+- `to_node`
+  - required
+  - target node `id`
+
+- `to_socket`
+  - required
+  - input socket name on the target node
+
+If a node ID or socket name cannot be found, that link is skipped.
+
+---
+
+## Minimal Valid Example
+
+```json
+{
+  "format": "geometry_nodes_ai_build",
+  "format_version": 1,
+  "clear_existing_nodes": true,
+  "nodes": [
+    {
+      "id": "input",
+      "bl_idname": "NodeGroupInput",
+      "location": [-400, 0]
+    },
+    {
+      "id": "subdivide",
+      "bl_idname": "GeometryNodeSubdivideMesh",
+      "location": [-100, 0],
+      "inputs": {
+        "Level": 3
+      }
+    },
+    {
+      "id": "output",
+      "bl_idname": "NodeGroupOutput",
+      "location": [250, 0]
+    }
+  ],
+  "links": [
+    {
+      "from_node": "input",
+      "from_socket": "Geometry",
+      "to_node": "subdivide",
+      "to_socket": "Mesh"
+    },
+    {
+      "from_node": "subdivide",
+      "from_socket": "Mesh",
+      "to_node": "output",
+      "to_socket": "Geometry"
+    }
+  ]
+}
+```
+
+---
+
+## Example with Node Properties
+
+This example shows how AI can set node properties in addition to default input values.
+
+```json
+{
+  "format": "geometry_nodes_ai_build",
+  "format_version": 1,
+  "clear_existing_nodes": true,
+  "nodes": [
+    {
+      "id": "math_1",
+      "bl_idname": "ShaderNodeMath",
+      "name": "Multiply Value",
+      "label": "Scale Multiplier",
+      "location": [0, 100],
+      "properties": {
+        "operation": "MULTIPLY"
+      },
+      "inputs": {
+        "Value": 2.0,
+        "Value_001": 3.0
+      }
+    }
+  ],
+  "links": []
+}
+```
+
+> Note: whether an input socket name is `Value`, `Value_001`, or something else depends on the Blender node type.
+> AI should use the actual socket names Blender expects.
+
+---
+
+## Rules for AI When Generating Import JSON
+
+When asking AI to generate importable JSON, use these rules:
+
+1. Always set:
+   - `format: "geometry_nodes_ai_build"`
+
+2. Always provide:
+   - `nodes`
+
+3. Prefer giving every node a unique:
+   - `id`
+
+4. For every node, provide the correct Blender:
+   - `bl_idname`
+
+5. Use socket **names**, not indices, in:
+   - `inputs`
+   - `links.from_socket`
+   - `links.to_socket`
+
+6. Only use `properties` for real Blender node properties.
+
+7. Keep the first test simple:
+   - `NodeGroupInput`
+   - one geometry processing node
+   - `NodeGroupOutput`
+
+8. If unsure about a node property, omit it.
+
+9. If unsure about a socket default value, omit it.
+
+10. Use simple graphs first before attempting complex multi-branch setups.
+
+---
+
+## Recommended Prompt for AI
+
+You can ask AI like this:
+
+```text
+請幫我輸出一份 Blender Geometry Nodes 可匯入的 JSON，格式必須是 geometry_nodes_ai_build。
+
+要求：
+1. 只能輸出合法 JSON
+2. format 必須是 geometry_nodes_ai_build
+3. 每個 node 都要有 id 與 bl_idname
+4. links 要使用 node id 與 socket 名稱
+5. 若不確定 Blender 屬性名稱，就不要輸出 properties
+6. 請先生成最小可運作版本
+```
+
+---
+
+## Recommended First Test Cases
+
+For project testing, start with these simple structures:
+
+### Test 1: Group Input → Subdivide Mesh → Group Output
+Goal:
+- verify node creation
+- verify socket default value assignment
+- verify link creation
+
+### Test 2: Group Input → Set Position → Group Output
+Goal:
+- verify another Geometry Nodes type
+- verify different socket names
+
+### Test 3: Math node only
+Goal:
+- verify generic property assignment such as `operation`
+
+---
+
+## Current Importer Limitations
+
+The current importer is intentionally minimal.
+
+### Supported now
+
+- create nodes by `bl_idname`
+- set basic node fields
+- set some node properties through `properties`
+- set some input default values through `inputs`
+- create links by socket names
+- optionally clear existing nodes before import
+
+### Not fully supported yet
+
+- automatic import of nested group JSON files
+- automatic creation of custom group interfaces
+- complete reconstruction from exported analysis JSON
+- advanced Blender-only internal node state
+- all possible node-specific special settings
+- full validation of socket/property compatibility
+
+Because of this, the best testing approach is:
+
+- start with small graphs
+- validate socket names carefully
+- gradually expand complexity
+
+---
+
+## Export Format Summary
+
+For completeness, the addon also exports analysis JSON using `geometry_nodes_ai_json`.
+
+That format is intended for:
+
+- AI understanding
+- graph analysis
+- documentation
+- reverse engineering
+
+It is not the same as the importer format.
+
+---
+
 ## Summary
 
-This exporter is designed for **hierarchical AI parsing** of Geometry Nodes:
+If you want AI to generate a node graph that Blender can import, the AI must output:
 
-- main graph in one file
-- nested group graphs in separate files
-- explicit references between them
-- stable structure for analysis, documentation, and reconstruction
+- `format: "geometry_nodes_ai_build"`
+
+The JSON should contain:
+
+- `nodes`
+- optional `links`
+- optional `properties`
+- optional `inputs`
+
+For the first round of testing, keep the structure small and explicit.

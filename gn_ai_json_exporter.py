@@ -263,6 +263,148 @@ def _write_json_file(filepath, data):
         json.dump(data, handle, ensure_ascii=False, indent=2)
 
 
+def _load_json_file(filepath):
+    # 讀取 JSON 檔案內容
+    with open(filepath, "r", encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def _clear_tree(tree):
+    # 清空節點樹內現有節點
+    for node in list(tree.nodes):
+        tree.nodes.remove(node)
+
+
+def _find_socket_by_name(sockets, socket_name):
+    # 依名稱尋找 socket
+    for socket in sockets:
+        if socket.name == socket_name:
+            return socket
+    return None
+
+
+def _apply_node_inputs(node, inputs_data):
+    # 套用節點輸入 socket 的預設值
+    if not isinstance(inputs_data, dict):
+        return
+
+    for socket_name, value in inputs_data.items():
+        socket = _find_socket_by_name(node.inputs, socket_name)
+        if socket is None or not hasattr(socket, "default_value"):
+            continue
+
+        try:
+            socket.default_value = value
+        except Exception:
+            try:
+                if isinstance(socket.default_value, bpy.types.bpy_prop_array):
+                    for index, item in enumerate(value):
+                        socket.default_value[index] = item
+            except Exception:
+                pass
+
+
+def _apply_node_properties(node, properties_data):
+    # 套用節點本身的額外屬性，例如 operation、data_type 等
+    if not isinstance(properties_data, dict):
+        return
+
+    for property_name, value in properties_data.items():
+        if not hasattr(node, property_name):
+            continue
+
+        try:
+            setattr(node, property_name, value)
+        except Exception:
+            pass
+
+
+def _create_node_from_build_data(tree, node_data):
+    # 根據 build JSON 建立單一節點
+    bl_idname = node_data.get("bl_idname")
+    if not bl_idname:
+        raise ValueError("節點缺少 bl_idname")
+
+    node = tree.nodes.new(bl_idname)
+
+    if "name" in node_data:
+        try:
+            node.name = node_data["name"]
+        except Exception:
+            pass
+
+    if "label" in node_data:
+        try:
+            node.label = node_data["label"]
+        except Exception:
+            pass
+
+    if "location" in node_data and isinstance(node_data["location"], (list, tuple)) and len(node_data["location"]) >= 2:
+        try:
+            node.location = (float(node_data["location"][0]), float(node_data["location"][1]))
+        except Exception:
+            pass
+
+    if "width" in node_data:
+        try:
+            node.width = float(node_data["width"])
+        except Exception:
+            pass
+
+    if "mute" in node_data:
+        try:
+            node.mute = bool(node_data["mute"])
+        except Exception:
+            pass
+
+    if "hide" in node_data:
+        try:
+            node.hide = bool(node_data["hide"])
+        except Exception:
+            pass
+
+    _apply_node_properties(node, node_data.get("properties"))
+    _apply_node_inputs(node, node_data.get("inputs"))
+
+    return node
+
+
+def _import_tree_from_build_json(tree, data, clear_existing):
+    # 從 AI build JSON 建立 Geometry Nodes 節點圖
+    if data.get("format") != "geometry_nodes_ai_build":
+        raise ValueError("JSON format 必須是 geometry_nodes_ai_build")
+
+    if clear_existing:
+        _clear_tree(tree)
+
+    nodes_data = data.get("nodes", [])
+    links_data = data.get("links", [])
+    node_map = {}
+
+    for index, node_data in enumerate(nodes_data):
+        node = _create_node_from_build_data(tree, node_data)
+        node_id = node_data.get("id") or node_data.get("name") or f"node_{index}"
+        node_map[node_id] = node
+
+    for link_data in links_data:
+        from_node = node_map.get(link_data.get("from_node"))
+        to_node = node_map.get(link_data.get("to_node"))
+
+        if from_node is None or to_node is None:
+            continue
+
+        from_socket = _find_socket_by_name(from_node.outputs, link_data.get("from_socket"))
+        to_socket = _find_socket_by_name(to_node.inputs, link_data.get("to_socket"))
+
+        if from_socket is None or to_socket is None:
+            continue
+
+        try:
+            tree.links.new(from_socket, to_socket)
+        except Exception:
+            pass
+
+
 class GNEXPORTER_Props(bpy.types.PropertyGroup):
     # 外掛使用的自訂屬性，會掛在 Scene 上
     export_path: bpy.props.StringProperty(
@@ -287,6 +429,18 @@ class GNEXPORTER_Props(bpy.types.PropertyGroup):
         name="另外導出 Group JSON",
         description="將 Group Node 參照的 Geometry Node Tree 另外輸出成獨立 JSON 檔案",
         default=True,
+    )
+
+    import_json_path: bpy.props.StringProperty(
+        name="導入 JSON",
+        subtype="FILE_PATH",
+        default="",
+    )
+
+    clear_before_import: bpy.props.BoolProperty(
+        name="導入前清空節點",
+        description="導入前先清空目標節點樹中的既有節點",
+        default=False,
     )
 
 
@@ -403,6 +557,53 @@ class GNEXPORTER_OT_Export(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class GNEXPORTER_OT_Import(bpy.types.Operator):
+    # 讀取 AI build JSON 並建立 Geometry Nodes
+    bl_idname = "gn_exporter.import_json"
+    bl_label = "由 JSON 生成 GN"
+    bl_description = "Import AI build JSON and create Geometry Nodes"
+
+    def execute(self, context):
+        props = context.scene.gn_exporter_props
+        import_path = bpy.path.abspath(props.import_json_path).strip()
+
+        if not import_path:
+            self.report({"ERROR"}, "請先指定導入 JSON 檔案")
+            return {"CANCELLED"}
+
+        if not os.path.isfile(import_path):
+            self.report({"ERROR"}, "找不到指定的 JSON 檔案")
+            return {"CANCELLED"}
+
+        editor_tree = _get_geometry_node_editor_tree(context)
+        tree = None
+
+        if editor_tree is not None:
+            tree = editor_tree
+        else:
+            _, _, tree = _get_modifier_node_tree(context, props.modifier_name)
+
+        if tree is None:
+            self.report({"ERROR"}, "找不到可導入的 Geometry Nodes Tree")
+            return {"CANCELLED"}
+
+        try:
+            data = _load_json_file(import_path)
+        except Exception as exc:
+            self.report({"ERROR"}, f"讀取 JSON 失敗: {exc}")
+            return {"CANCELLED"}
+
+        try:
+            clear_existing = bool(data.get("clear_existing_nodes", props.clear_before_import))
+            _import_tree_from_build_json(tree, data, clear_existing)
+        except Exception as exc:
+            self.report({"ERROR"}, f"導入 JSON 失敗: {exc}")
+            return {"CANCELLED"}
+
+        self.report({"INFO"}, "已根據 JSON 生成 Geometry Nodes")
+        return {"FINISHED"}
+
+
 class GNEXPORTER_PT_NodeEditorPanel(bpy.types.Panel):
     # 顯示在 Geometry Nodes Editor 側邊欄的面板
     bl_label = "GN Exporter"
@@ -427,6 +628,11 @@ class GNEXPORTER_PT_NodeEditorPanel(bpy.types.Panel):
         layout.prop(props, "export_group_trees")
         layout.operator("gn_exporter.export_json", icon="EXPORT")
 
+        layout.separator()
+        layout.prop(props, "import_json_path")
+        layout.prop(props, "clear_before_import")
+        layout.operator("gn_exporter.import_json", icon="IMPORT")
+
 
 class GNEXPORTER_PT_View3DPanel(bpy.types.Panel):
     # 顯示在 3D View 側邊欄的面板
@@ -450,6 +656,11 @@ class GNEXPORTER_PT_View3DPanel(bpy.types.Panel):
             # 若有 Geometry Nodes Modifier，顯示選擇與導出按鈕
             layout.prop(props, "modifier_name")
             layout.operator("gn_exporter.export_json", icon="EXPORT")
+
+            layout.separator()
+            layout.prop(props, "import_json_path")
+            layout.prop(props, "clear_before_import")
+            layout.operator("gn_exporter.import_json", icon="IMPORT")
         else:
             # 若沒有可用 Modifier，顯示提示訊息
             layout.label(text="目前作用中物件沒有可導出的 GN Modifier", icon="INFO")
@@ -459,6 +670,7 @@ class GNEXPORTER_PT_View3DPanel(bpy.types.Panel):
 classes = (
     GNEXPORTER_Props,
     GNEXPORTER_OT_Export,
+    GNEXPORTER_OT_Import,
     GNEXPORTER_PT_NodeEditorPanel,
     GNEXPORTER_PT_View3DPanel,
 )
