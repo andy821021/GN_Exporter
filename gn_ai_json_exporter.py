@@ -2,12 +2,44 @@ bl_info = {
     # 外掛基本資訊，會顯示在 Blender 的 Add-ons 清單中
     "name": "GN AI JSON Exporter",
     "author": "GitHub Copilot",
-    "version": (1, 5, 0),
+    "version": (1, 7, 1),
     "blender": (4, 5, 0),
     "location": "3D View / Geometry Nodes Editor > Sidebar > GN Exporter",
     "description": "Export Geometry Nodes to AI-readable JSON",
     "category": "Node",
 }
+
+
+NODE_PROPERTY_ALIASES = {
+    "use_clamp": "clamp",
+}
+
+
+NODE_PROPERTY_PRIORITY_BY_TYPE = {
+    "ShaderNodeMath": ("operation", "clamp"),
+    "FunctionNodeCompare": ("data_type", "mode", "operation"),
+    "GeometryNodeSwitch": ("input_type",),
+    "GeometryNodeIndexSwitch": ("data_type",),
+    "GeometryNodeCaptureAttribute": ("data_type", "domain"),
+    "GeometryNodeStoreNamedAttribute": ("data_type", "domain"),
+    "GeometryNodeAttributeDomainSize": ("component",),
+    "GeometryNodeSampleIndex": ("data_type", "domain", "clamp"),
+    "GeometryNodeRaycast": ("data_type", "mapping"),
+}
+
+
+DEFAULT_NODE_PROPERTY_PRIORITY = (
+    "data_type",
+    "input_type",
+    "component",
+    "domain",
+    "mode",
+    "operation",
+    "rotation_type",
+    "transform_space",
+    "interpolation_type",
+    "clamp",
+)
 
 import bpy
 import json
@@ -456,11 +488,41 @@ def _find_socket_by_name(sockets, socket_name):
     return None
 
 
+def _normalize_socket_label(value):
+    # 將 socket 名稱正規化，降低大小寫與空白差異造成的比對失敗
+    if value is None:
+        return ""
+
+    return " ".join(str(value).strip().lower().replace("_", " ").split())
+
+
+def _find_socket_by_name_fuzzy(sockets, socket_name):
+    # 以較寬鬆的名稱規則比對 socket，提升 Blender 不同版本的相容性
+    normalized_name = _normalize_socket_label(socket_name)
+    if not normalized_name:
+        return None
+
+    for socket in sockets:
+        if _normalize_socket_label(getattr(socket, "name", "")) == normalized_name:
+            return socket
+
+    return None
+
+
 def _find_socket_by_identifier(sockets, socket_identifier):
     # 依 identifier 尋找 socket
     for socket in sockets:
         if getattr(socket, "identifier", None) == socket_identifier:
             return socket
+
+    normalized_identifier = _normalize_socket_label(socket_identifier)
+    if not normalized_identifier:
+        return None
+
+    for socket in sockets:
+        if _normalize_socket_label(getattr(socket, "identifier", "")) == normalized_identifier:
+            return socket
+
     return None
 
 
@@ -491,14 +553,30 @@ def _find_socket(sockets, socket_reference):
 
         socket_name = socket_reference.get("name")
         if socket_name:
-            return _find_socket_by_name(sockets, socket_name)
+            socket = _find_socket_by_name(sockets, socket_name)
+            if socket is not None:
+                return socket
+
+            return _find_socket_by_name_fuzzy(sockets, socket_name)
+
+        if socket_identifier:
+            socket = _find_socket_by_name(sockets, socket_identifier)
+            if socket is not None:
+                return socket
+            socket = _find_socket_by_name_fuzzy(sockets, socket_identifier)
+            if socket is not None:
+                return socket
 
         return None
 
     if isinstance(socket_reference, int):
         return _find_socket_by_index(sockets, socket_reference)
 
-    return _find_socket_by_name(sockets, socket_reference)
+    socket = _find_socket_by_name(sockets, socket_reference)
+    if socket is not None:
+        return socket
+
+    return _find_socket_by_name_fuzzy(sockets, socket_reference)
 
 
 def _normalize_socket_reference(socket_reference):
@@ -697,6 +775,230 @@ def _raise_or_warn(strict_mode, warnings, message):
     _record_warning(warnings, message)
 
 
+def _normalize_node_property_name(property_name):
+    # 支援少量常見屬性別名
+    return NODE_PROPERTY_ALIASES.get(property_name, property_name)
+
+
+def _find_node_callable(node, *method_names):
+    # 尋找節點上可呼叫的方法名稱
+    for method_name in method_names:
+        method = getattr(node, method_name, None)
+        if callable(method):
+            return method
+    return None
+
+
+def _ensure_capture_attribute_items(node, items_data, strict_mode=False, warnings=None):
+    # 確保 Capture Attribute 有足夠的 capture item，讓動態 socket 能建立
+    if not isinstance(items_data, list) or not items_data:
+        return
+
+    active_items = getattr(node, "capture_items", None)
+    if active_items is None:
+        _raise_or_warn(strict_mode, warnings, f"節點 {node.bl_idname} 不支援 capture_items")
+        return
+
+    add_item = _find_node_callable(node, "capture_items_new", "capture_items_add", "add_capture_item")
+
+    if add_item is None and hasattr(active_items, "new") and callable(active_items.new):
+        add_item = active_items.new
+
+    remove_item = _find_node_callable(node, "capture_items_remove", "remove_capture_item")
+
+    if remove_item is None and hasattr(active_items, "remove") and callable(active_items.remove):
+        remove_item = active_items.remove
+
+    if add_item is None:
+        _raise_or_warn(strict_mode, warnings, f"節點 {node.bl_idname} 無法動態新增 capture item")
+        return
+
+    while len(active_items) < len(items_data):
+        item_definition = items_data[len(active_items)] if len(active_items) < len(items_data) else {}
+        item_data_type = item_definition.get("data_type") or getattr(node, "data_type", "FLOAT")
+        item_name = item_definition.get("name") or f"Value {len(active_items) + 1}"
+
+        try:
+            try:
+                add_item(item_data_type, item_name)
+            except TypeError:
+                try:
+                    add_item(item_data_type)
+                except TypeError:
+                    add_item()
+        except Exception as exc:
+            _raise_or_warn(strict_mode, warnings, f"無法為 {node.bl_idname} 新增 capture item: {exc}")
+            return
+
+    while remove_item is not None and len(active_items) > len(items_data):
+        try:
+            remove_item(active_items[-1])
+        except Exception:
+            break
+
+    for index, item_definition in enumerate(items_data):
+        if index >= len(active_items):
+            break
+
+        active_item = active_items[index]
+        if "data_type" in item_definition and hasattr(active_item, "data_type"):
+            try:
+                active_item.data_type = item_definition["data_type"]
+            except Exception as exc:
+                _raise_or_warn(strict_mode, warnings, f"無法設定 capture item data_type: {exc}")
+
+        if "name" in item_definition and hasattr(active_item, "name"):
+            try:
+                active_item.name = item_definition["name"]
+            except Exception as exc:
+                _raise_or_warn(strict_mode, warnings, f"無法設定 capture item 名稱: {exc}")
+
+
+def _apply_dynamic_node_items(node, node_data, strict_mode=False, warnings=None):
+    # 還原需要動態新增項目的特殊節點
+    dynamic_items = node_data.get("dynamic_items")
+
+    if node.bl_idname == "GeometryNodeCaptureAttribute":
+        capture_items = node_data.get("capture_items")
+        if capture_items is None and isinstance(dynamic_items, dict):
+            capture_items = dynamic_items.get("capture_items")
+
+        _ensure_capture_attribute_items(node, capture_items, strict_mode=strict_mode, warnings=warnings)
+
+
+def _ensure_node_dynamic_state_for_link(node, socket_reference, is_output, node_data=None, strict_mode=False, warnings=None):
+    # 在建立連線前，盡量補齊高頻特殊節點所需的動態 socket 狀態
+    if node is None:
+        return
+
+    socket_name = ""
+    socket_identifier = ""
+
+    if isinstance(socket_reference, dict):
+        socket_name = socket_reference.get("name") or ""
+        socket_identifier = socket_reference.get("identifier") or ""
+    elif isinstance(socket_reference, str):
+        socket_name = socket_reference
+
+    normalized_name = _normalize_socket_label(socket_name)
+    normalized_identifier = _normalize_socket_label(socket_identifier)
+
+    if node.bl_idname == "GeometryNodeCaptureAttribute":
+        capture_items = None
+        if isinstance(node_data, dict):
+            capture_items = node_data.get("capture_items")
+            if capture_items is None:
+                dynamic_items = node_data.get("dynamic_items")
+                if isinstance(dynamic_items, dict):
+                    capture_items = dynamic_items.get("capture_items")
+
+        reserved_socket_names = {
+            "geometry",
+            "value",
+            "attribute",
+            "selection",
+        }
+        needs_capture_socket = any(
+            token in {normalized_name, normalized_identifier}
+            for token in ("value", "attribute")
+        )
+
+        if not needs_capture_socket:
+            for token in (normalized_name, normalized_identifier):
+                if token and token not in reserved_socket_names:
+                    needs_capture_socket = True
+                    break
+
+        if needs_capture_socket and not capture_items:
+            capture_items = [{
+                "name": socket_name or socket_identifier or "Value",
+                "data_type": getattr(node, "data_type", "FLOAT"),
+            }]
+
+        _ensure_capture_attribute_items(node, capture_items, strict_mode=strict_mode, warnings=warnings)
+
+
+def _find_socket_with_dynamic_support(node, socket_reference, is_output, node_data=None, strict_mode=False, warnings=None):
+    # 先找 socket，找不到時再嘗試補建動態項目後重找
+    sockets = node.outputs if is_output else node.inputs
+    socket = _find_socket(sockets, socket_reference)
+    if socket is not None:
+        return socket
+
+    _ensure_node_dynamic_state_for_link(
+        node,
+        socket_reference,
+        is_output,
+        node_data=node_data,
+        strict_mode=strict_mode,
+        warnings=warnings,
+    )
+
+    sockets = node.outputs if is_output else node.inputs
+    return _find_socket(sockets, socket_reference)
+
+
+def _resolve_socket_for_input_value(node, socket_reference, node_data=None, strict_mode=False, warnings=None):
+    # 設定 input default value 前也先補齊可能延後生成的 socket
+    return _find_socket_with_dynamic_support(
+        node,
+        socket_reference,
+        is_output=False,
+        node_data=node_data,
+        strict_mode=strict_mode,
+        warnings=warnings,
+    )
+
+
+def _set_node_property(node, property_name, value, strict_mode=False, warnings=None):
+    # 套用單一節點屬性，失敗時記錄 warning
+    normalized_name = _normalize_node_property_name(property_name)
+    if not hasattr(node, normalized_name):
+        _raise_or_warn(strict_mode, warnings, f"節點 {node.bl_idname} 不支援屬性: {property_name}")
+        return False
+
+    try:
+        setattr(node, normalized_name, value)
+        return True
+    except Exception as exc:
+        _raise_or_warn(strict_mode, warnings, f"無法設定節點屬性 {node.bl_idname}.{normalized_name}: {exc}")
+        return False
+
+
+def _get_ordered_node_properties(node, properties_data):
+    # 依節點特性決定屬性套用順序，避免 socket 結構晚變更
+    if not isinstance(properties_data, dict):
+        return []
+
+    ordered_names = []
+    seen_names = set()
+
+    for property_name in NODE_PROPERTY_PRIORITY_BY_TYPE.get(getattr(node, "bl_idname", ""), ()):
+        normalized_name = _normalize_node_property_name(property_name)
+        if property_name in properties_data:
+            ordered_names.append(property_name)
+            seen_names.add(property_name)
+        elif normalized_name != property_name and normalized_name in properties_data:
+            ordered_names.append(normalized_name)
+            seen_names.add(normalized_name)
+
+    for property_name in DEFAULT_NODE_PROPERTY_PRIORITY:
+        normalized_name = _normalize_node_property_name(property_name)
+        if property_name in properties_data and property_name not in seen_names:
+            ordered_names.append(property_name)
+            seen_names.add(property_name)
+        elif normalized_name != property_name and normalized_name in properties_data and normalized_name not in seen_names:
+            ordered_names.append(normalized_name)
+            seen_names.add(normalized_name)
+
+    for property_name in properties_data.keys():
+        if property_name not in seen_names:
+            ordered_names.append(property_name)
+            seen_names.add(property_name)
+
+    return [(property_name, properties_data[property_name]) for property_name in ordered_names]
+
+
 def _find_group_tree_by_name(group_name):
     # 依名稱尋找既有 GeometryNodeTree
     if not group_name:
@@ -838,7 +1140,13 @@ def _apply_node_inputs(node, inputs_data, strict_mode=False, warnings=None):
             input_items.append((socket_reference, item.get("value", item.get("default_value"))))
 
     for socket_reference, value in input_items:
-        socket = _find_socket(node.inputs, socket_reference)
+        socket = _resolve_socket_for_input_value(
+            node,
+            socket_reference,
+            node_data={"inputs": inputs_data},
+            strict_mode=strict_mode,
+            warnings=warnings,
+        )
         if socket is None or not hasattr(socket, "default_value"):
             _raise_or_warn(strict_mode, warnings, f"找不到輸入 socket: {socket_reference}")
             continue
@@ -866,19 +1174,13 @@ def _apply_custom_properties(node, custom_properties):
             pass
 
 
-def _apply_node_properties(node, properties_data):
+def _apply_node_properties(node, properties_data, strict_mode=False, warnings=None):
     # 套用節點本身的額外屬性，例如 operation、data_type 等
     if not isinstance(properties_data, dict):
         return
 
-    for property_name, value in properties_data.items():
-        if not hasattr(node, property_name):
-            continue
-
-        try:
-            setattr(node, property_name, value)
-        except Exception:
-            pass
+    for property_name, value in _get_ordered_node_properties(node, properties_data):
+        _set_node_property(node, property_name, value, strict_mode=strict_mode, warnings=warnings)
 
 
 def _create_node_from_build_data(tree, node_data, strict_mode=False, warnings=None, base_filepath=None, place_offset=(0.0, 0.0), import_state=None):
@@ -948,7 +1250,8 @@ def _create_node_from_build_data(tree, node_data, strict_mode=False, warnings=No
         except Exception as exc:
             _raise_or_warn(strict_mode, warnings, f"無法將 group 指定到節點 {node.name}: {exc}")
 
-    _apply_node_properties(node, node_data.get("properties"))
+    _apply_node_properties(node, node_data.get("properties"), strict_mode=strict_mode, warnings=warnings)
+    _apply_dynamic_node_items(node, node_data, strict_mode=strict_mode, warnings=warnings)
     _apply_node_inputs(node, node_data.get("inputs"), strict_mode=strict_mode, warnings=warnings)
     _apply_custom_properties(node, node_data.get("custom_properties"))
 
@@ -1030,6 +1333,7 @@ def _import_tree_from_build_json(tree, data, clear_existing, base_filepath=None,
         nodes_data = data.get("nodes", [])
         links_data = data.get("links", [])
         node_map = {}
+        node_data_map = {}
 
         for index, node_data in enumerate(nodes_data):
             try:
@@ -1048,6 +1352,7 @@ def _import_tree_from_build_json(tree, data, clear_existing, base_filepath=None,
 
             node_id = node_data.get("id") or node_data.get("name") or f"node_{index}"
             node_map[node_id] = node
+            node_data_map[node_id] = node_data
 
         for link_data in links_data:
             from_node = node_map.get(link_data.get("from_node"))
@@ -1057,8 +1362,25 @@ def _import_tree_from_build_json(tree, data, clear_existing, base_filepath=None,
                 _raise_or_warn(strict_mode, warnings, f"連線節點不存在: {link_data}")
                 continue
 
-            from_socket = _find_socket(from_node.outputs, _get_link_socket_reference(link_data, "from"))
-            to_socket = _find_socket(to_node.inputs, _get_link_socket_reference(link_data, "to"))
+            from_socket_reference = _get_link_socket_reference(link_data, "from")
+            to_socket_reference = _get_link_socket_reference(link_data, "to")
+
+            from_socket = _find_socket_with_dynamic_support(
+                from_node,
+                from_socket_reference,
+                is_output=True,
+                node_data=node_data_map.get(link_data.get("from_node")),
+                strict_mode=strict_mode,
+                warnings=warnings,
+            )
+            to_socket = _find_socket_with_dynamic_support(
+                to_node,
+                to_socket_reference,
+                is_output=False,
+                node_data=node_data_map.get(link_data.get("to_node")),
+                strict_mode=strict_mode,
+                warnings=warnings,
+            )
 
             if from_socket is None or to_socket is None:
                 _raise_or_warn(strict_mode, warnings, f"連線 socket 不存在: {link_data}")
