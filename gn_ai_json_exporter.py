@@ -2,7 +2,7 @@ bl_info = {
     # 外掛基本資訊，會顯示在 Blender 的 Add-ons 清單中
     "name": "GN AI JSON Exporter",
     "author": "GitHub Copilot",
-    "version": (1, 7, 1),
+    "version": (1, 8, 0),
     "blender": (4, 5, 0),
     "location": "3D View / Geometry Nodes Editor > Sidebar > GN Exporter",
     "description": "Export Geometry Nodes to AI-readable JSON",
@@ -20,11 +20,14 @@ NODE_PROPERTY_PRIORITY_BY_TYPE = {
     "FunctionNodeCompare": ("data_type", "mode", "operation"),
     "GeometryNodeSwitch": ("input_type",),
     "GeometryNodeIndexSwitch": ("data_type",),
+    "GeometryNodeMenuSwitch": ("data_type",),
     "GeometryNodeCaptureAttribute": ("data_type", "domain"),
     "GeometryNodeStoreNamedAttribute": ("data_type", "domain"),
     "GeometryNodeAttributeDomainSize": ("component",),
     "GeometryNodeSampleIndex": ("data_type", "domain", "clamp"),
     "GeometryNodeRaycast": ("data_type", "mapping"),
+    "GeometryNodeSampleVolume": ("grid_type", "interpolation_mode"),
+    "GeometryNodeViewer": ("data_type", "domain"),
 }
 
 
@@ -65,6 +68,45 @@ INTERFACE_SOCKET_TYPE_MAP = {
     "TEXTURE": "NodeSocketTexture",
     "IMAGE": "NodeSocketImage",
     "MATERIAL": "NodeSocketMaterial",
+}
+
+
+ZONE_NODE_PAIR_INFO = {
+    "GeometryNodeSimulationInput": {
+        "pair_type": "GeometryNodeSimulationOutput",
+        "owner_type": "GeometryNodeSimulationOutput",
+    },
+    "GeometryNodeSimulationOutput": {
+        "pair_type": "GeometryNodeSimulationInput",
+        "owner_type": "GeometryNodeSimulationOutput",
+    },
+    "GeometryNodeRepeatInput": {
+        "pair_type": "GeometryNodeRepeatOutput",
+        "owner_type": "GeometryNodeRepeatOutput",
+    },
+    "GeometryNodeRepeatOutput": {
+        "pair_type": "GeometryNodeRepeatInput",
+        "owner_type": "GeometryNodeRepeatOutput",
+    },
+    "GeometryNodeForeachGeometryElementInput": {
+        "pair_type": "GeometryNodeForeachGeometryElementOutput",
+        "owner_type": "GeometryNodeForeachGeometryElementInput",
+    },
+    "GeometryNodeForeachGeometryElementOutput": {
+        "pair_type": "GeometryNodeForeachGeometryElementInput",
+        "owner_type": "GeometryNodeForeachGeometryElementInput",
+    },
+}
+
+
+PARTIALLY_SUPPORTED_NODE_WARNINGS = {
+    "GeometryNodeSimulationInput": "Simulation Zone 目前僅部分支援；無法保證正確建立成對 zone 與還原 state sockets",
+    "GeometryNodeSimulationOutput": "Simulation Zone 目前僅部分支援；無法保證正確建立成對 zone 與還原 state sockets",
+    "GeometryNodeRepeatInput": "Repeat Zone 目前僅部分支援；無法保證正確建立成對 zone 與還原 repeat sockets",
+    "GeometryNodeRepeatOutput": "Repeat Zone 目前僅部分支援；無法保證正確建立成對 zone 與還原 repeat sockets",
+    "GeometryNodeForeachGeometryElementInput": "For Each Zone 目前僅部分支援；無法保證正確建立成對 zone 與還原 generated sockets",
+    "GeometryNodeForeachGeometryElementOutput": "For Each Zone 目前僅部分支援；無法保證正確建立成對 zone 與還原 generated sockets",
+    "GeometryNodeBakeNode": "Bake 節點目前未完整支援；而且不同 Blender 版本的 bl_idname 可能不同",
 }
 
 
@@ -113,6 +155,161 @@ def _get_geometry_node_editor_tree(context):
         return None
 
     return tree
+
+
+def _get_zone_pair_info(bl_idname):
+    # 回傳 zone 類節點的配對資訊
+    return ZONE_NODE_PAIR_INFO.get(bl_idname)
+
+
+def _warn_partial_node_support(node_data, warned_types, warnings):
+    # 對已知尚未完整支援的節點類型給一次性警告
+    if not isinstance(node_data, dict):
+        return
+
+    bl_idname = node_data.get("bl_idname")
+    if bl_idname in warned_types:
+        return
+
+    message = PARTIALLY_SUPPORTED_NODE_WARNINGS.get(bl_idname)
+    if not message:
+        return
+
+    warned_types.add(bl_idname)
+    _record_warning(warnings, message)
+
+
+def _find_paired_zone_node(node):
+    # 盡量從 Blender 節點實例上找出自動建立的配對 zone 節點
+    if node is None:
+        return None
+
+    for attribute_name in ("paired_output", "paired_input", "output_node", "input_node"):
+        paired_node = getattr(node, attribute_name, None)
+        if paired_node is not None:
+            return paired_node
+
+    return None
+
+
+def _apply_basic_node_fields(node, node_data, place_offset=(0.0, 0.0)):
+    # 套用與節點建立順序無關的基本欄位
+    if node is None or not isinstance(node_data, dict):
+        return
+
+    if "name" in node_data:
+        try:
+            node.name = node_data["name"]
+        except Exception:
+            pass
+
+    if "label" in node_data:
+        try:
+            node.label = node_data["label"]
+        except Exception:
+            pass
+
+    if "location" in node_data and isinstance(node_data["location"], (list, tuple)) and len(node_data["location"]) >= 2:
+        try:
+            offset_x, offset_y = _coerce_vector2(place_offset)
+            node.location = (
+                float(node_data["location"][0]) + offset_x,
+                float(node_data["location"][1]) + offset_y,
+            )
+        except Exception:
+            pass
+    else:
+        offset_x, offset_y = _coerce_vector2(place_offset)
+        if offset_x != 0.0 or offset_y != 0.0:
+            try:
+                node.location = (float(node.location.x) + offset_x, float(node.location.y) + offset_y)
+            except Exception:
+                pass
+
+    if "width" in node_data:
+        try:
+            node.width = float(node_data["width"])
+        except Exception:
+            pass
+
+    if "mute" in node_data:
+        try:
+            node.mute = bool(node_data["mute"])
+        except Exception:
+            pass
+
+    if "hide" in node_data:
+        try:
+            node.hide = bool(node_data["hide"])
+        except Exception:
+            pass
+
+
+def _apply_full_node_data(node, node_data, strict_mode=False, warnings=None):
+    # 套用單一節點完整 JSON 設定
+    if node is None or not isinstance(node_data, dict):
+        return
+
+    warnings_optional = node_data.get("warnings_optional")
+    if isinstance(warnings_optional, list):
+        for warning_message in warnings_optional:
+            _record_warning(warnings, f"節點 {node_data.get('name') or node.bl_idname}: {warning_message}")
+
+    _apply_node_properties(node, node_data.get("properties"), strict_mode=strict_mode, warnings=warnings)
+    _apply_dynamic_node_items(node, node_data, strict_mode=strict_mode, warnings=warnings)
+    _apply_node_inputs(node, node_data.get("inputs"), strict_mode=strict_mode, warnings=warnings)
+    _apply_custom_properties(node, node_data.get("custom_properties"))
+
+
+def _merge_zone_owner_dynamic_items(owner_type, owner_data, pair_data):
+    # 將 zone 配對兩側的動態項目整併到實際 owner 節點資料
+    merged_data = dict(owner_data or {})
+    other_data = pair_data or {}
+
+    if owner_type in {"GeometryNodeSimulationOutput", "GeometryNodeRepeatOutput"}:
+        for key in ("state_items", "repeat_items"):
+            if key not in merged_data or merged_data.get(key) is None:
+                if other_data.get(key) is not None:
+                    merged_data[key] = other_data.get(key)
+
+    return merged_data
+
+
+def _create_zone_node_pair(tree, primary_node_data, paired_node_data, strict_mode=False, warnings=None, place_offset=(0.0, 0.0)):
+    # 建立 zone 節點配對，優先讓 Blender 自動產生成對節點
+    primary_type = primary_node_data.get("bl_idname")
+    pair_info = _get_zone_pair_info(primary_type)
+    if pair_info is None:
+        raise ValueError(f"不是支援的 zone 節點類型: {primary_type}")
+
+    owner_data = primary_node_data if primary_type == pair_info["owner_type"] else paired_node_data
+    other_data = paired_node_data if owner_data is primary_node_data else primary_node_data
+    owner_type = pair_info["owner_type"]
+
+    owner_node = tree.nodes.new(owner_type)
+    paired_node = _find_paired_zone_node(owner_node)
+
+    if paired_node is None:
+        fallback_pair_type = _get_zone_pair_info(owner_type)["pair_type"]
+        paired_node = tree.nodes.new(fallback_pair_type)
+        _raise_or_warn(strict_mode, warnings, f"{owner_type} 未自動建立配對節點，已退回手動建立")
+
+    owner_node_data = owner_data if owner_node.bl_idname == owner_data.get("bl_idname") else other_data
+    pair_node_data = other_data if owner_node_data is owner_data else owner_data
+
+    _apply_basic_node_fields(owner_node, owner_node_data, place_offset=place_offset)
+    _apply_basic_node_fields(paired_node, pair_node_data, place_offset=place_offset)
+
+    owner_payload = _merge_zone_owner_dynamic_items(owner_type, owner_node_data, pair_node_data)
+    _apply_full_node_data(owner_node, owner_payload, strict_mode=strict_mode, warnings=warnings)
+
+    if paired_node.bl_idname not in {"GeometryNodeSimulationInput", "GeometryNodeRepeatInput"}:
+        _apply_full_node_data(paired_node, pair_node_data, strict_mode=strict_mode, warnings=warnings)
+
+    return {
+        owner_node_data.get("id") or owner_node_data.get("name"): owner_node,
+        pair_node_data.get("id") or pair_node_data.get("name"): paired_node,
+    }
 
 
 def _get_active_object(context):
@@ -767,6 +964,49 @@ def _record_warning(warnings, message):
         warnings.append(message)
 
 
+def _write_warning_report_to_blender_text(text_name, warnings):
+    # 將警告寫到 Blender 內部 Text 資料塊，方便直接查看
+    if not warnings:
+        return None
+
+    try:
+        text_block = bpy.data.texts.get(text_name)
+        if text_block is None:
+            text_block = bpy.data.texts.new(text_name)
+        else:
+            text_block.clear()
+
+        text_block.write("GN AI JSON Exporter Import Warnings\n")
+        text_block.write("=" * 40 + "\n")
+        for index, warning_message in enumerate(warnings, start=1):
+            text_block.write(f"{index:02d}. {warning_message}\n")
+
+        return text_block.name
+    except Exception:
+        return None
+
+
+def _write_warning_report_file(import_path, warnings):
+    # 將警告另外輸出成文字檔，避免只能從 Console 查看
+    if not warnings or not import_path:
+        return None
+
+    try:
+        base_dir = os.path.dirname(import_path)
+        base_name = os.path.splitext(os.path.basename(import_path))[0]
+        report_path = os.path.join(base_dir, f"{base_name}__import_warnings.txt")
+
+        with open(report_path, "w", encoding="utf-8") as handle:
+            handle.write("GN AI JSON Exporter Import Warnings\n")
+            handle.write("=" * 40 + "\n")
+            for index, warning_message in enumerate(warnings, start=1):
+                handle.write(f"{index:02d}. {warning_message}\n")
+
+        return report_path
+    except Exception:
+        return None
+
+
 def _raise_or_warn(strict_mode, warnings, message):
     # strict_mode 時拋錯，否則只記錄警告
     if strict_mode:
@@ -789,81 +1029,168 @@ def _find_node_callable(node, *method_names):
     return None
 
 
-def _ensure_capture_attribute_items(node, items_data, strict_mode=False, warnings=None):
-    # 確保 Capture Attribute 有足夠的 capture item，讓動態 socket 能建立
+def _ensure_node_collection_items(node, collection_attr, items_data, new_item_fn, strict_mode=False, warnings=None):
+    # 通用動態項目集合管理器，處理各種節點的 dynamic socket item
     if not isinstance(items_data, list) or not items_data:
         return
 
-    active_items = getattr(node, "capture_items", None)
+    active_items = getattr(node, collection_attr, None)
     if active_items is None:
-        _raise_or_warn(strict_mode, warnings, f"節點 {node.bl_idname} 不支援 capture_items")
+        _raise_or_warn(strict_mode, warnings, f"節點 {node.bl_idname} 不支援 {collection_attr}")
         return
 
-    add_item = _find_node_callable(node, "capture_items_new", "capture_items_add", "add_capture_item")
-
-    if add_item is None and hasattr(active_items, "new") and callable(active_items.new):
-        add_item = active_items.new
-
-    remove_item = _find_node_callable(node, "capture_items_remove", "remove_capture_item")
-
-    if remove_item is None and hasattr(active_items, "remove") and callable(active_items.remove):
-        remove_item = active_items.remove
-
-    if add_item is None:
-        _raise_or_warn(strict_mode, warnings, f"節點 {node.bl_idname} 無法動態新增 capture item")
-        return
+    remove_fn = getattr(active_items, "remove", None)
 
     while len(active_items) < len(items_data):
-        item_definition = items_data[len(active_items)] if len(active_items) < len(items_data) else {}
-        item_data_type = item_definition.get("data_type") or getattr(node, "data_type", "FLOAT")
-        item_name = item_definition.get("name") or f"Value {len(active_items) + 1}"
-
+        item_def = items_data[len(active_items)]
         try:
-            try:
-                add_item(item_data_type, item_name)
-            except TypeError:
-                try:
-                    add_item(item_data_type)
-                except TypeError:
-                    add_item()
+            new_item_fn(active_items, node, item_def)
         except Exception as exc:
-            _raise_or_warn(strict_mode, warnings, f"無法為 {node.bl_idname} 新增 capture item: {exc}")
+            _raise_or_warn(strict_mode, warnings, f"無法為 {node.bl_idname}.{collection_attr} 新增 item: {exc}")
             return
 
-    while remove_item is not None and len(active_items) > len(items_data):
+    while remove_fn is not None and len(active_items) > len(items_data):
         try:
-            remove_item(active_items[-1])
+            remove_fn(active_items[-1])
         except Exception:
             break
 
-    for index, item_definition in enumerate(items_data):
+    for index, item_def in enumerate(items_data):
         if index >= len(active_items):
             break
-
         active_item = active_items[index]
-        if "data_type" in item_definition and hasattr(active_item, "data_type"):
-            try:
-                active_item.data_type = item_definition["data_type"]
-            except Exception as exc:
-                _raise_or_warn(strict_mode, warnings, f"無法設定 capture item data_type: {exc}")
+        for field in ("data_type", "socket_type", "name", "description"):
+            if field in item_def and hasattr(active_item, field):
+                try:
+                    setattr(active_item, field, item_def[field])
+                except Exception:
+                    pass
 
-        if "name" in item_definition and hasattr(active_item, "name"):
+
+def _new_capture_item(collection, node, item_def):
+    # GeometryNodeCaptureAttribute: new(data_type, name)
+    data_type = item_def.get("data_type") or getattr(node, "data_type", "FLOAT")
+    name = item_def.get("name") or "Value"
+    try:
+        collection.new(data_type, name)
+    except TypeError:
+        try:
+            collection.new(data_type)
+        except TypeError:
+            collection.new()
+
+
+def _new_index_switch_item(collection, node, item_def):
+    # GeometryNodeIndexSwitch: new(data_type) or new()
+    data_type = item_def.get("data_type") or getattr(node, "data_type", "FLOAT")
+    try:
+        collection.new(data_type)
+    except TypeError:
+        collection.new()
+
+
+def _new_enum_item(collection, node, item_def):
+    # GeometryNodeMenuSwitch: new(name)
+    name = item_def.get("name") or "Item"
+    try:
+        collection.new(name)
+    except TypeError:
+        collection.new()
+
+
+def _new_zone_item(collection, node, item_def):
+    # Simulation / Repeat / Foreach zones: new(name, socket_type) or reversed
+    name = item_def.get("name") or "Value"
+    socket_type = item_def.get("socket_type") or "NodeSocketFloat"
+    try:
+        collection.new(name, socket_type)
+    except TypeError:
+        try:
+            collection.new(socket_type, name)
+        except TypeError:
             try:
-                active_item.name = item_definition["name"]
-            except Exception as exc:
-                _raise_or_warn(strict_mode, warnings, f"無法設定 capture item 名稱: {exc}")
+                collection.new(name)
+            except TypeError:
+                collection.new()
+
+
+def _new_bake_item(collection, node, item_def):
+    # GeometryNodeBakeNode: new(socket_type, name) or reversed
+    name = item_def.get("name") or "Value"
+    socket_type = item_def.get("socket_type") or "NodeSocketFloat"
+    try:
+        collection.new(socket_type, name)
+    except TypeError:
+        try:
+            collection.new(name, socket_type)
+        except TypeError:
+            try:
+                collection.new(name)
+            except TypeError:
+                collection.new()
+
+
+def _get_dynamic_items_data(node_data, *keys):
+    # 從 node_data 取得動態項目資料，支援多個 key 與 dynamic_items fallback
+    if not isinstance(node_data, dict):
+        return None
+    for key in keys:
+        items = node_data.get(key)
+        if items is not None:
+            return items
+    dynamic_items = node_data.get("dynamic_items")
+    if isinstance(dynamic_items, dict):
+        for key in keys:
+            items = dynamic_items.get(key)
+            if items is not None:
+                return items
+    return None
+
+
+def _ensure_capture_attribute_items(node, items_data, strict_mode=False, warnings=None):
+    # 確保 Capture Attribute 有足夠的 capture item，讓動態 socket 能建立
+    _ensure_node_collection_items(node, "capture_items", items_data, _new_capture_item, strict_mode, warnings)
 
 
 def _apply_dynamic_node_items(node, node_data, strict_mode=False, warnings=None):
     # 還原需要動態新增項目的特殊節點
-    dynamic_items = node_data.get("dynamic_items")
+    bl_idname = node.bl_idname
 
-    if node.bl_idname == "GeometryNodeCaptureAttribute":
-        capture_items = node_data.get("capture_items")
-        if capture_items is None and isinstance(dynamic_items, dict):
-            capture_items = dynamic_items.get("capture_items")
+    if bl_idname == "GeometryNodeCaptureAttribute":
+        items = _get_dynamic_items_data(node_data, "capture_items")
+        _ensure_node_collection_items(node, "capture_items", items, _new_capture_item, strict_mode, warnings)
 
-        _ensure_capture_attribute_items(node, capture_items, strict_mode=strict_mode, warnings=warnings)
+    elif bl_idname == "GeometryNodeIndexSwitch":
+        items = _get_dynamic_items_data(node_data, "index_switch_items")
+        _ensure_node_collection_items(node, "index_switch_items", items, _new_index_switch_item, strict_mode, warnings)
+
+    elif bl_idname == "GeometryNodeMenuSwitch":
+        items = _get_dynamic_items_data(node_data, "enum_items", "menu_items")
+        _ensure_node_collection_items(node, "enum_items", items, _new_enum_item, strict_mode, warnings)
+
+    elif bl_idname in ("GeometryNodeSimulationInput", "GeometryNodeSimulationOutput"):
+        items = _get_dynamic_items_data(node_data, "state_items")
+        _ensure_node_collection_items(node, "state_items", items, _new_zone_item, strict_mode, warnings)
+
+    elif bl_idname in ("GeometryNodeRepeatInput", "GeometryNodeRepeatOutput"):
+        items = _get_dynamic_items_data(node_data, "repeat_items")
+        _ensure_node_collection_items(node, "repeat_items", items, _new_zone_item, strict_mode, warnings)
+
+    elif bl_idname == "GeometryNodeBakeNode":
+        items = _get_dynamic_items_data(node_data, "bake_items")
+        _ensure_node_collection_items(node, "bake_items", items, _new_bake_item, strict_mode, warnings)
+
+    elif bl_idname == "GeometryNodeForeachGeometryElementInput":
+        input_items = _get_dynamic_items_data(node_data, "input_items")
+        _ensure_node_collection_items(node, "input_items", input_items, _new_zone_item, strict_mode, warnings)
+        generation_items = _get_dynamic_items_data(node_data, "generation_items")
+        _ensure_node_collection_items(node, "generation_items", generation_items, _new_zone_item, strict_mode, warnings)
+
+    elif bl_idname == "GeometryNodeForeachGeometryElementOutput":
+        output_items = _get_dynamic_items_data(node_data, "output_items")
+        _ensure_node_collection_items(node, "output_items", output_items, _new_zone_item, strict_mode, warnings)
+        generation_items = _get_dynamic_items_data(node_data, "generation_items")
+        _ensure_node_collection_items(node, "generation_items", generation_items, _new_zone_item, strict_mode, warnings)
 
 
 def _ensure_node_dynamic_state_for_link(node, socket_reference, is_output, node_data=None, strict_mode=False, warnings=None):
@@ -883,39 +1210,66 @@ def _ensure_node_dynamic_state_for_link(node, socket_reference, is_output, node_
     normalized_name = _normalize_socket_label(socket_name)
     normalized_identifier = _normalize_socket_label(socket_identifier)
 
-    if node.bl_idname == "GeometryNodeCaptureAttribute":
-        capture_items = None
-        if isinstance(node_data, dict):
-            capture_items = node_data.get("capture_items")
-            if capture_items is None:
-                dynamic_items = node_data.get("dynamic_items")
-                if isinstance(dynamic_items, dict):
-                    capture_items = dynamic_items.get("capture_items")
+    lookup_token = normalized_name or normalized_identifier
+    bl_idname = node.bl_idname
 
-        reserved_socket_names = {
-            "geometry",
-            "value",
-            "attribute",
-            "selection",
-        }
-        needs_capture_socket = any(
-            token in {normalized_name, normalized_identifier}
-            for token in ("value", "attribute")
-        )
+    if bl_idname == "GeometryNodeCaptureAttribute":
+        reserved = {"geometry", "value", "attribute", "selection"}
+        capture_items = _get_dynamic_items_data(node_data, "capture_items")
+        if not capture_items and lookup_token and lookup_token not in reserved:
+            capture_items = [{"name": socket_name or socket_identifier or "Value", "data_type": getattr(node, "data_type", "FLOAT")}]
+        _ensure_node_collection_items(node, "capture_items", capture_items, _new_capture_item, strict_mode, warnings)
 
-        if not needs_capture_socket:
-            for token in (normalized_name, normalized_identifier):
-                if token and token not in reserved_socket_names:
-                    needs_capture_socket = True
-                    break
+    elif bl_idname == "GeometryNodeIndexSwitch":
+        reserved = {"index", "output"}
+        items = _get_dynamic_items_data(node_data, "index_switch_items")
+        if not items and lookup_token and lookup_token not in reserved:
+            items = [{"data_type": getattr(node, "data_type", "FLOAT")}]
+        _ensure_node_collection_items(node, "index_switch_items", items, _new_index_switch_item, strict_mode, warnings)
 
-        if needs_capture_socket and not capture_items:
-            capture_items = [{
-                "name": socket_name or socket_identifier or "Value",
-                "data_type": getattr(node, "data_type", "FLOAT"),
-            }]
+    elif bl_idname == "GeometryNodeMenuSwitch":
+        reserved = {"menu", "output"}
+        items = _get_dynamic_items_data(node_data, "enum_items", "menu_items")
+        if not items and lookup_token and lookup_token not in reserved:
+            items = [{"name": socket_name or socket_identifier or "Item"}]
+        _ensure_node_collection_items(node, "enum_items", items, _new_enum_item, strict_mode, warnings)
 
-        _ensure_capture_attribute_items(node, capture_items, strict_mode=strict_mode, warnings=warnings)
+    elif bl_idname in ("GeometryNodeSimulationInput", "GeometryNodeSimulationOutput"):
+        reserved = {"geometry", "delta time", "delta time"}
+        items = _get_dynamic_items_data(node_data, "state_items")
+        if not items and lookup_token and lookup_token not in reserved:
+            items = [{"name": socket_name or socket_identifier or "Value", "socket_type": "NodeSocketFloat"}]
+        _ensure_node_collection_items(node, "state_items", items, _new_zone_item, strict_mode, warnings)
+
+    elif bl_idname in ("GeometryNodeRepeatInput", "GeometryNodeRepeatOutput"):
+        reserved = {"iterations", "geometry"}
+        items = _get_dynamic_items_data(node_data, "repeat_items")
+        if not items and lookup_token and lookup_token not in reserved:
+            items = [{"name": socket_name or socket_identifier or "Value", "socket_type": "NodeSocketFloat"}]
+        _ensure_node_collection_items(node, "repeat_items", items, _new_zone_item, strict_mode, warnings)
+
+    elif bl_idname == "GeometryNodeBakeNode":
+        reserved = set()
+        items = _get_dynamic_items_data(node_data, "bake_items")
+        if not items and lookup_token and lookup_token not in reserved:
+            items = [{"name": socket_name or socket_identifier or "Value", "socket_type": "NodeSocketFloat"}]
+        _ensure_node_collection_items(node, "bake_items", items, _new_bake_item, strict_mode, warnings)
+
+    elif bl_idname == "GeometryNodeForeachGeometryElementInput":
+        reserved = {"geometry", "selection"}
+        attr = "generation_items" if (normalized_name or normalized_identifier).startswith("generated") else "input_items"
+        items = _get_dynamic_items_data(node_data, attr)
+        if not items and lookup_token and lookup_token not in reserved:
+            items = [{"name": socket_name or socket_identifier or "Value", "socket_type": "NodeSocketFloat"}]
+        _ensure_node_collection_items(node, attr, items, _new_zone_item, strict_mode, warnings)
+
+    elif bl_idname == "GeometryNodeForeachGeometryElementOutput":
+        reserved = {"geometry"}
+        attr = "generation_items" if (normalized_name or normalized_identifier).startswith("generated") else "output_items"
+        items = _get_dynamic_items_data(node_data, attr)
+        if not items and lookup_token and lookup_token not in reserved:
+            items = [{"name": socket_name or socket_identifier or "Value", "socket_type": "NodeSocketFloat"}]
+        _ensure_node_collection_items(node, attr, items, _new_zone_item, strict_mode, warnings)
 
 
 def _find_socket_with_dynamic_support(node, socket_reference, is_output, node_data=None, strict_mode=False, warnings=None):
@@ -1190,58 +1544,7 @@ def _create_node_from_build_data(tree, node_data, strict_mode=False, warnings=No
         raise ValueError("節點缺少 bl_idname")
 
     node = tree.nodes.new(bl_idname)
-
-    warnings_optional = node_data.get("warnings_optional")
-    if isinstance(warnings_optional, list):
-        for warning_message in warnings_optional:
-            _record_warning(warnings, f"節點 {node_data.get('name') or bl_idname}: {warning_message}")
-
-    if "name" in node_data:
-        try:
-            node.name = node_data["name"]
-        except Exception:
-            pass
-
-    if "label" in node_data:
-        try:
-            node.label = node_data["label"]
-        except Exception:
-            pass
-
-    if "location" in node_data and isinstance(node_data["location"], (list, tuple)) and len(node_data["location"]) >= 2:
-        try:
-            offset_x, offset_y = _coerce_vector2(place_offset)
-            node.location = (
-                float(node_data["location"][0]) + offset_x,
-                float(node_data["location"][1]) + offset_y,
-            )
-        except Exception:
-            pass
-    else:
-        offset_x, offset_y = _coerce_vector2(place_offset)
-        if offset_x != 0.0 or offset_y != 0.0:
-            try:
-                node.location = (float(node.location.x) + offset_x, float(node.location.y) + offset_y)
-            except Exception:
-                pass
-
-    if "width" in node_data:
-        try:
-            node.width = float(node_data["width"])
-        except Exception:
-            pass
-
-    if "mute" in node_data:
-        try:
-            node.mute = bool(node_data["mute"])
-        except Exception:
-            pass
-
-    if "hide" in node_data:
-        try:
-            node.hide = bool(node_data["hide"])
-        except Exception:
-            pass
+    _apply_basic_node_fields(node, node_data, place_offset=place_offset)
 
     group_tree = _resolve_group_tree_reference(base_filepath, node_data, strict_mode, warnings, import_state=import_state)
     if group_tree is not None and hasattr(node, "node_tree"):
@@ -1250,10 +1553,7 @@ def _create_node_from_build_data(tree, node_data, strict_mode=False, warnings=No
         except Exception as exc:
             _raise_or_warn(strict_mode, warnings, f"無法將 group 指定到節點 {node.name}: {exc}")
 
-    _apply_node_properties(node, node_data.get("properties"), strict_mode=strict_mode, warnings=warnings)
-    _apply_dynamic_node_items(node, node_data, strict_mode=strict_mode, warnings=warnings)
-    _apply_node_inputs(node, node_data.get("inputs"), strict_mode=strict_mode, warnings=warnings)
-    _apply_custom_properties(node, node_data.get("custom_properties"))
+    _apply_full_node_data(node, node_data, strict_mode=strict_mode, warnings=warnings)
 
     return node
 
@@ -1274,6 +1574,30 @@ def _get_link_socket_reference(link_data, key_prefix):
         return reference
 
     return _normalize_socket_reference(direct_reference)
+
+
+def _describe_sockets(sockets):
+    # 將目前可用 sockets 轉成易讀文字，方便 warning 診斷
+    descriptions = []
+    for index, socket in enumerate(sockets):
+        socket_name = getattr(socket, "name", "")
+        socket_identifier = getattr(socket, "identifier", "")
+        if socket_identifier:
+            descriptions.append(f"{index}:{socket_name}[{socket_identifier}]")
+        else:
+            descriptions.append(f"{index}:{socket_name}")
+
+    return ", ".join(descriptions) if descriptions else "<none>"
+
+
+def _build_missing_socket_warning(node, socket_reference, is_output):
+    # 建立更詳細的 socket 查找失敗警告
+    sockets = node.outputs if is_output else node.inputs
+    direction = "輸出" if is_output else "輸入"
+    return (
+        f"找不到{direction} socket: node={node.name} ({node.bl_idname}), "
+        f"reference={socket_reference}, available={_describe_sockets(sockets)}"
+    )
 
 
 def _import_tree_from_build_json(tree, data, clear_existing, base_filepath=None, import_state=None):
@@ -1334,8 +1658,60 @@ def _import_tree_from_build_json(tree, data, clear_existing, base_filepath=None,
         links_data = data.get("links", [])
         node_map = {}
         node_data_map = {}
+        consumed_zone_node_ids = set()
+        warned_partial_node_types = set()
+
+        zone_pair_candidates = {}
+        for node_data in nodes_data:
+            _warn_partial_node_support(node_data, warned_partial_node_types, warnings)
+            node_id = node_data.get("id") or node_data.get("name")
+            bl_idname = node_data.get("bl_idname")
+            pair_info = _get_zone_pair_info(bl_idname)
+            if node_id and pair_info is not None:
+                zone_pair_candidates.setdefault(bl_idname, []).append(node_data)
 
         for index, node_data in enumerate(nodes_data):
+            node_id = node_data.get("id") or node_data.get("name") or f"node_{index}"
+            if node_id in consumed_zone_node_ids:
+                continue
+
+            bl_idname = node_data.get("bl_idname")
+            pair_info = _get_zone_pair_info(bl_idname)
+            if pair_info is not None:
+                pair_type = pair_info["pair_type"]
+                partner_data = None
+                for candidate in zone_pair_candidates.get(pair_type, []):
+                    candidate_id = candidate.get("id") or candidate.get("name")
+                    if candidate_id not in consumed_zone_node_ids:
+                        partner_data = candidate
+                        break
+
+                if partner_data is not None:
+                    try:
+                        created_zone_nodes = _create_zone_node_pair(
+                            tree,
+                            node_data,
+                            partner_data,
+                            strict_mode=strict_mode,
+                            warnings=warnings,
+                            place_offset=place_offset,
+                        )
+                    except Exception as exc:
+                        _raise_or_warn(strict_mode, warnings, f"建立 zone 節點失敗 index={index}: {exc}")
+                        continue
+
+                    node_map.update(created_zone_nodes)
+
+                    current_node_id = node_data.get("id") or node_data.get("name")
+                    partner_node_id = partner_data.get("id") or partner_data.get("name")
+                    if current_node_id:
+                        node_data_map[current_node_id] = node_data
+                        consumed_zone_node_ids.add(current_node_id)
+                    if partner_node_id:
+                        node_data_map[partner_node_id] = partner_data
+                        consumed_zone_node_ids.add(partner_node_id)
+                    continue
+
             try:
                 node = _create_node_from_build_data(
                     tree,
@@ -1350,7 +1726,6 @@ def _import_tree_from_build_json(tree, data, clear_existing, base_filepath=None,
                 _raise_or_warn(strict_mode, warnings, f"建立節點失敗 index={index}: {exc}")
                 continue
 
-            node_id = node_data.get("id") or node_data.get("name") or f"node_{index}"
             node_map[node_id] = node
             node_data_map[node_id] = node_data
 
@@ -1382,8 +1757,13 @@ def _import_tree_from_build_json(tree, data, clear_existing, base_filepath=None,
                 warnings=warnings,
             )
 
+            if from_socket is None:
+                _raise_or_warn(strict_mode, warnings, _build_missing_socket_warning(from_node, from_socket_reference, True))
+
+            if to_socket is None:
+                _raise_or_warn(strict_mode, warnings, _build_missing_socket_warning(to_node, to_socket_reference, False))
+
             if from_socket is None or to_socket is None:
-                _raise_or_warn(strict_mode, warnings, f"連線 socket 不存在: {link_data}")
                 continue
 
             try:
@@ -1598,7 +1978,16 @@ class GNEXPORTER_OT_Import(bpy.types.Operator):
             return {"CANCELLED"}
 
         if warnings:
-            self.report({"WARNING"}, f"已生成 Geometry Nodes，但有 {len(warnings)} 個警告；詳見 Console")
+            text_block_name = _write_warning_report_to_blender_text("GN_Importer_Warnings", warnings)
+            warning_report_path = _write_warning_report_file(import_path, warnings)
+
+            report_message = f"已生成 Geometry Nodes，但有 {len(warnings)} 個警告"
+            if text_block_name:
+                report_message += f"；詳見 Text: {text_block_name}"
+            if warning_report_path:
+                report_message += f"；另已寫入: {warning_report_path}"
+
+            self.report({"WARNING"}, report_message)
             for warning_message in warnings:
                 print(f"[GN Exporter][Import Warning] {warning_message}")
         else:
