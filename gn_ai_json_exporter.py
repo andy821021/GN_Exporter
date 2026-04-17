@@ -2,7 +2,7 @@ bl_info = {
     # 外掛基本資訊，會顯示在 Blender 的 Add-ons 清單中
     "name": "GN AI JSON Exporter",
     "author": "GitHub Copilot",
-    "version": (1, 2, 0),
+    "version": (1, 3, 0),
     "blender": (4, 5, 0),
     "location": "3D View / Geometry Nodes Editor > Sidebar > GN Exporter",
     "description": "Export Geometry Nodes to AI-readable JSON",
@@ -12,6 +12,27 @@ bl_info = {
 import bpy
 import json
 import os
+
+
+SUPPORTED_BUILD_FORMAT_VERSION = 2
+
+
+def _as_bool(value, default=False):
+    # 將常見 JSON 布林輸入統一轉成 bool
+    if isinstance(value, bool):
+        return value
+
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "off"}:
+            return False
+
+    if value is None:
+        return default
+
+    return bool(value)
 
 
 def _get_geometry_node_editor_tree(context):
@@ -269,6 +290,53 @@ def _load_json_file(filepath):
         return json.load(handle)
 
 
+def _resolve_json_path(base_filepath, relative_filepath):
+    # 將相對 JSON 路徑解析成實際檔案路徑
+    if not relative_filepath:
+        return None
+
+    if os.path.isabs(relative_filepath):
+        return relative_filepath
+
+    if not base_filepath:
+        return os.path.normpath(relative_filepath)
+
+    return os.path.normpath(os.path.join(os.path.dirname(base_filepath), relative_filepath))
+
+
+def _normalize_build_json_data(data, group_name=None):
+    # 將簡化 build JSON 統一成 importer 可處理的完整格式
+    if not isinstance(data, dict):
+        raise ValueError("build JSON 資料格式必須是 object")
+
+    if data.get("format") == "geometry_nodes_ai_build":
+        normalized_data = dict(data)
+    else:
+        normalized_data = {
+            "format": "geometry_nodes_ai_build",
+            "format_version": data.get("format_version", 1),
+            "nodes": data.get("nodes", []),
+            "links": data.get("links", []),
+        }
+
+        for key in (
+            "metadata",
+            "clear_existing_nodes",
+            "append_mode",
+            "place_offset",
+            "strict_mode",
+            "description",
+            "generator",
+        ):
+            if key in data:
+                normalized_data[key] = data[key]
+
+    if group_name and "group_name" not in normalized_data:
+        normalized_data["group_name"] = group_name
+
+    return normalized_data
+
+
 def _clear_tree(tree):
     # 清空節點樹內現有節點
     for node in list(tree.nodes):
@@ -283,14 +351,194 @@ def _find_socket_by_name(sockets, socket_name):
     return None
 
 
-def _apply_node_inputs(node, inputs_data):
+def _find_socket_by_identifier(sockets, socket_identifier):
+    # 依 identifier 尋找 socket
+    for socket in sockets:
+        if getattr(socket, "identifier", None) == socket_identifier:
+            return socket
+    return None
+
+
+def _find_socket_by_index(sockets, socket_index):
+    # 依 index 尋找 socket
+    if not isinstance(socket_index, int):
+        return None
+
+    if socket_index < 0 or socket_index >= len(sockets):
+        return None
+
+    return sockets[socket_index]
+
+
+def _find_socket(sockets, socket_reference):
+    # 依 name / identifier / index 尋找 socket，支援舊版純字串格式
+    if isinstance(socket_reference, dict):
+        socket_identifier = socket_reference.get("identifier")
+        if socket_identifier:
+            socket = _find_socket_by_identifier(sockets, socket_identifier)
+            if socket is not None:
+                return socket
+
+        if "index" in socket_reference:
+            socket = _find_socket_by_index(sockets, socket_reference.get("index"))
+            if socket is not None:
+                return socket
+
+        socket_name = socket_reference.get("name")
+        if socket_name:
+            return _find_socket_by_name(sockets, socket_name)
+
+        return None
+
+    if isinstance(socket_reference, int):
+        return _find_socket_by_index(sockets, socket_reference)
+
+    return _find_socket_by_name(sockets, socket_reference)
+
+
+def _normalize_socket_reference(socket_reference):
+    # 將 socket 參照統一成 dict 格式
+    if isinstance(socket_reference, dict):
+        return socket_reference
+
+    if isinstance(socket_reference, int):
+        return {"index": socket_reference}
+
+    if socket_reference is None:
+        return {}
+
+    return {"name": socket_reference}
+
+
+def _coerce_vector2(value, default=(0.0, 0.0)):
+    # 將輸入轉成二維座標
+    if not isinstance(value, (list, tuple)) or len(value) < 2:
+        return float(default[0]), float(default[1])
+
+    try:
+        return float(value[0]), float(value[1])
+    except Exception:
+        return float(default[0]), float(default[1])
+
+
+def _record_warning(warnings, message):
+    # 收集非致命警告
+    if warnings is not None:
+        warnings.append(message)
+
+
+def _raise_or_warn(strict_mode, warnings, message):
+    # strict_mode 時拋錯，否則只記錄警告
+    if strict_mode:
+        raise ValueError(message)
+
+    _record_warning(warnings, message)
+
+
+def _find_group_tree_by_name(group_name):
+    # 依名稱尋找既有 GeometryNodeTree
+    if not group_name:
+        return None
+
+    tree = bpy.data.node_groups.get(group_name)
+    if tree is None:
+        return None
+
+    if getattr(tree, "bl_idname", "") != "GeometryNodeTree":
+        return None
+
+    return tree
+
+
+def _resolve_group_tree_reference(base_filepath, node_data, strict_mode, warnings):
+    # 解析 group node 要使用的 GeometryNodeTree
+    group_name = node_data.get("group_name")
+    group_data = node_data.get("group_data")
+    group_file = node_data.get("group_file")
+
+    if isinstance(group_data, dict):
+        resolved_group_name = group_name or group_data.get("group_name") or group_data.get("tree_name") or node_data.get("name") or "Imported Group"
+        group_tree = bpy.data.node_groups.new(resolved_group_name, "GeometryNodeTree")
+
+        try:
+            normalized_group_data = _normalize_build_json_data(group_data, group_name=resolved_group_name)
+            _import_tree_from_build_json(group_tree, normalized_group_data, clear_existing=True, base_filepath=base_filepath)
+        except Exception as exc:
+            bpy.data.node_groups.remove(group_tree)
+            _raise_or_warn(strict_mode, warnings, f"Group data 匯入失敗: {resolved_group_name}: {exc}")
+            return None
+
+        return group_tree
+
+    if group_file:
+        resolved_group_path = _resolve_json_path(base_filepath, group_file)
+        if not resolved_group_path or not os.path.isfile(resolved_group_path):
+            _raise_or_warn(strict_mode, warnings, f"找不到 group_file: {group_file}")
+            return None
+
+        try:
+            group_data = _load_json_file(resolved_group_path)
+        except Exception as exc:
+            _raise_or_warn(strict_mode, warnings, f"讀取 group_file 失敗: {group_file}: {exc}")
+            return None
+
+        resolved_group_name = group_name or group_data.get("group_name") or group_data.get("tree_name") or os.path.splitext(os.path.basename(resolved_group_path))[0]
+        group_tree = bpy.data.node_groups.new(resolved_group_name, "GeometryNodeTree")
+
+        try:
+            normalized_group_data = _normalize_build_json_data(group_data, group_name=resolved_group_name)
+            _import_tree_from_build_json(group_tree, normalized_group_data, clear_existing=True, base_filepath=resolved_group_path)
+        except Exception as exc:
+            bpy.data.node_groups.remove(group_tree)
+            _raise_or_warn(strict_mode, warnings, f"group_file 匯入失敗: {group_file}: {exc}")
+            return None
+
+        return group_tree
+
+    existing_tree = _find_group_tree_by_name(group_name)
+    if existing_tree is not None:
+        return existing_tree
+
+    if group_name:
+        _raise_or_warn(strict_mode, warnings, f"找不到 group_name 對應的 GeometryNodeTree: {group_name}")
+
+    return None
+
+
+def _apply_node_inputs(node, inputs_data, strict_mode=False, warnings=None):
     # 套用節點輸入 socket 的預設值
-    if not isinstance(inputs_data, dict):
+    if not isinstance(inputs_data, (dict, list, tuple)):
         return
 
-    for socket_name, value in inputs_data.items():
-        socket = _find_socket_by_name(node.inputs, socket_name)
+    if isinstance(inputs_data, dict):
+        input_items = []
+        for socket_name, value in inputs_data.items():
+            if isinstance(value, dict) and any(key in value for key in ("value", "default_value", "identifier", "index", "name")):
+                socket_reference = {
+                    "name": value.get("name", socket_name),
+                    "identifier": value.get("identifier"),
+                    "index": value.get("index"),
+                }
+                input_items.append((socket_reference, value.get("value", value.get("default_value"))))
+            else:
+                input_items.append(({"name": socket_name}, value))
+    else:
+        input_items = []
+        for item in inputs_data:
+            if not isinstance(item, dict):
+                continue
+
+            socket_reference = {
+                "name": item.get("name"),
+                "identifier": item.get("identifier"),
+                "index": item.get("index"),
+            }
+            input_items.append((socket_reference, item.get("value", item.get("default_value"))))
+
+    for socket_reference, value in input_items:
+        socket = _find_socket(node.inputs, socket_reference)
         if socket is None or not hasattr(socket, "default_value"):
+            _raise_or_warn(strict_mode, warnings, f"找不到輸入 socket: {socket_reference}")
             continue
 
         try:
@@ -301,7 +549,19 @@ def _apply_node_inputs(node, inputs_data):
                     for index, item in enumerate(value):
                         socket.default_value[index] = item
             except Exception:
-                pass
+                _raise_or_warn(strict_mode, warnings, f"無法設定輸入 socket 預設值: {socket.name}")
+
+
+def _apply_custom_properties(node, custom_properties):
+    # 套用 Blender ID Property 自訂欄位
+    if not isinstance(custom_properties, dict):
+        return
+
+    for property_name, value in custom_properties.items():
+        try:
+            node[property_name] = value
+        except Exception:
+            pass
 
 
 def _apply_node_properties(node, properties_data):
@@ -319,13 +579,18 @@ def _apply_node_properties(node, properties_data):
             pass
 
 
-def _create_node_from_build_data(tree, node_data):
+def _create_node_from_build_data(tree, node_data, strict_mode=False, warnings=None, base_filepath=None, place_offset=(0.0, 0.0)):
     # 根據 build JSON 建立單一節點
     bl_idname = node_data.get("bl_idname")
     if not bl_idname:
         raise ValueError("節點缺少 bl_idname")
 
     node = tree.nodes.new(bl_idname)
+
+    warnings_optional = node_data.get("warnings_optional")
+    if isinstance(warnings_optional, list):
+        for warning_message in warnings_optional:
+            _record_warning(warnings, f"節點 {node_data.get('name') or bl_idname}: {warning_message}")
 
     if "name" in node_data:
         try:
@@ -341,9 +606,20 @@ def _create_node_from_build_data(tree, node_data):
 
     if "location" in node_data and isinstance(node_data["location"], (list, tuple)) and len(node_data["location"]) >= 2:
         try:
-            node.location = (float(node_data["location"][0]), float(node_data["location"][1]))
+            offset_x, offset_y = _coerce_vector2(place_offset)
+            node.location = (
+                float(node_data["location"][0]) + offset_x,
+                float(node_data["location"][1]) + offset_y,
+            )
         except Exception:
             pass
+    else:
+        offset_x, offset_y = _coerce_vector2(place_offset)
+        if offset_x != 0.0 or offset_y != 0.0:
+            try:
+                node.location = (float(node.location.x) + offset_x, float(node.location.y) + offset_y)
+            except Exception:
+                pass
 
     if "width" in node_data:
         try:
@@ -363,26 +639,89 @@ def _create_node_from_build_data(tree, node_data):
         except Exception:
             pass
 
+    group_tree = _resolve_group_tree_reference(base_filepath, node_data, strict_mode, warnings)
+    if group_tree is not None and hasattr(node, "node_tree"):
+        try:
+            node.node_tree = group_tree
+        except Exception as exc:
+            _raise_or_warn(strict_mode, warnings, f"無法將 group 指定到節點 {node.name}: {exc}")
+
     _apply_node_properties(node, node_data.get("properties"))
-    _apply_node_inputs(node, node_data.get("inputs"))
+    _apply_node_inputs(node, node_data.get("inputs"), strict_mode=strict_mode, warnings=warnings)
+    _apply_custom_properties(node, node_data.get("custom_properties"))
 
     return node
 
 
-def _import_tree_from_build_json(tree, data, clear_existing):
+def _get_link_socket_reference(link_data, key_prefix):
+    # 從 link data 取得 socket 參照，支援新舊格式
+    direct_reference = link_data.get(f"{key_prefix}_socket")
+    if isinstance(direct_reference, dict):
+        return direct_reference
+
+    reference = {
+        "name": link_data.get(f"{key_prefix}_socket_name"),
+        "identifier": link_data.get(f"{key_prefix}_socket_identifier"),
+        "index": link_data.get(f"{key_prefix}_socket_index"),
+    }
+
+    if any(value is not None and value != "" for value in reference.values()):
+        return reference
+
+    return _normalize_socket_reference(direct_reference)
+
+
+def _import_tree_from_build_json(tree, data, clear_existing, base_filepath=None):
     # 從 AI build JSON 建立 Geometry Nodes 節點圖
+    data = _normalize_build_json_data(data)
+
     if data.get("format") != "geometry_nodes_ai_build":
         raise ValueError("JSON format 必須是 geometry_nodes_ai_build")
+
+    format_version = int(data.get("format_version", 1))
+    if format_version > SUPPORTED_BUILD_FORMAT_VERSION:
+        raise ValueError(
+            f"不支援的 build JSON format_version: {format_version}，目前最高支援 {SUPPORTED_BUILD_FORMAT_VERSION}"
+        )
+
+    metadata = data.get("metadata")
+    if isinstance(metadata, dict):
+        target_blender_version = metadata.get("target_blender_version")
+        if isinstance(target_blender_version, (list, tuple)) and len(target_blender_version) >= 2:
+            current_version = tuple(bpy.app.version)
+            target_version = tuple(int(item) for item in target_blender_version[:3])
+            if current_version < target_version:
+                raise ValueError(f"此 JSON 目標 Blender 版本為 {target_version}，目前版本為 {current_version}")
+
+    strict_mode = _as_bool(data.get("strict_mode", False))
+    append_mode = _as_bool(data.get("append_mode", False))
+    place_offset = _coerce_vector2(data.get("place_offset"), default=(0.0, 0.0))
+
+    if append_mode:
+        clear_existing = False
 
     if clear_existing:
         _clear_tree(tree)
 
     nodes_data = data.get("nodes", [])
     links_data = data.get("links", [])
+    warnings = []
     node_map = {}
 
     for index, node_data in enumerate(nodes_data):
-        node = _create_node_from_build_data(tree, node_data)
+        try:
+            node = _create_node_from_build_data(
+                tree,
+                node_data,
+                strict_mode=strict_mode,
+                warnings=warnings,
+                base_filepath=base_filepath,
+                place_offset=place_offset,
+            )
+        except Exception as exc:
+            _raise_or_warn(strict_mode, warnings, f"建立節點失敗 index={index}: {exc}")
+            continue
+
         node_id = node_data.get("id") or node_data.get("name") or f"node_{index}"
         node_map[node_id] = node
 
@@ -391,18 +730,22 @@ def _import_tree_from_build_json(tree, data, clear_existing):
         to_node = node_map.get(link_data.get("to_node"))
 
         if from_node is None or to_node is None:
+            _raise_or_warn(strict_mode, warnings, f"連線節點不存在: {link_data}")
             continue
 
-        from_socket = _find_socket_by_name(from_node.outputs, link_data.get("from_socket"))
-        to_socket = _find_socket_by_name(to_node.inputs, link_data.get("to_socket"))
+        from_socket = _find_socket(from_node.outputs, _get_link_socket_reference(link_data, "from"))
+        to_socket = _find_socket(to_node.inputs, _get_link_socket_reference(link_data, "to"))
 
         if from_socket is None or to_socket is None:
+            _raise_or_warn(strict_mode, warnings, f"連線 socket 不存在: {link_data}")
             continue
 
         try:
             tree.links.new(from_socket, to_socket)
-        except Exception:
-            pass
+        except Exception as exc:
+            _raise_or_warn(strict_mode, warnings, f"建立連線失敗: {link_data}: {exc}")
+
+    return warnings
 
 
 class GNEXPORTER_Props(bpy.types.PropertyGroup):
@@ -594,13 +937,24 @@ class GNEXPORTER_OT_Import(bpy.types.Operator):
             return {"CANCELLED"}
 
         try:
-            clear_existing = bool(data.get("clear_existing_nodes", props.clear_before_import))
-            _import_tree_from_build_json(tree, data, clear_existing)
+            clear_existing = _as_bool(data.get("clear_existing_nodes", props.clear_before_import))
+            warnings = _import_tree_from_build_json(
+                tree,
+                data,
+                clear_existing,
+                base_filepath=import_path,
+            )
         except Exception as exc:
             self.report({"ERROR"}, f"導入 JSON 失敗: {exc}")
             return {"CANCELLED"}
 
-        self.report({"INFO"}, "已根據 JSON 生成 Geometry Nodes")
+        if warnings:
+            self.report({"WARNING"}, f"已生成 Geometry Nodes，但有 {len(warnings)} 個警告；詳見 Console")
+            for warning_message in warnings:
+                print(f"[GN Exporter][Import Warning] {warning_message}")
+        else:
+            self.report({"INFO"}, "已根據 JSON 生成 Geometry Nodes")
+
         return {"FINISHED"}
 
 
