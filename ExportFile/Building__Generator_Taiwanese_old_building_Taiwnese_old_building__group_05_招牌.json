@@ -1,0 +1,5759 @@
+{
+  "format": "geometry_nodes_ai_json",
+  "format_version": 2,
+  "generator": "GN AI JSON Exporter",
+  "blender_version": [
+    4,
+    5,
+    2
+  ],
+  "source": "group_node_tree",
+  "export_role": "group_tree",
+  "object_name": "Building  Generator",
+  "modifier_name": "Taiwanese old building",
+  "tree": {
+    "name": "招牌",
+    "bl_idname": "GeometryNodeTree",
+    "selection_mode": "all_nodes",
+    "node_count": 74,
+    "link_count": 77,
+    "nodes": [
+      {
+        "name": "Group Output",
+        "label": "",
+        "type": "GROUP_OUTPUT",
+        "bl_idname": "NodeGroupOutput",
+        "location": [
+          3903.228271484375,
+          204.01124572753906
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Instances",
+            "identifier": "Socket_0",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          },
+          {
+            "name": "",
+            "identifier": "__extend__",
+            "type": "CUSTOM",
+            "bl_idname": "NodeSocketVirtual",
+            "is_linked": false,
+            "is_multi_input": false
+          }
+        ],
+        "outputs": []
+      },
+      {
+        "name": "Group Input",
+        "label": "",
+        "type": "GROUP_INPUT",
+        "bl_idname": "NodeGroupInput",
+        "location": [
+          -1481.720947265625,
+          639.5177001953125
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "Mesh",
+            "identifier": "Socket_1",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          },
+          {
+            "name": "直立招牌大小",
+            "identifier": "Socket_2",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 20
+          },
+          {
+            "name": "直立招牌數量",
+            "identifier": "Socket_3",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 1
+          },
+          {
+            "name": "直立招牌_位置",
+            "identifier": "Socket_4",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVectorTranslation",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              -1.1920928955078125e-07,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "直立招牌_變變",
+            "identifier": "Socket_5",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 26
+          },
+          {
+            "name": "橫招牌_1變變",
+            "identifier": "Socket_6",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 49
+          },
+          {
+            "name": "",
+            "identifier": "__extend__",
+            "type": "CUSTOM",
+            "bl_idname": "NodeSocketVirtual",
+            "is_linked": false,
+            "is_multi_input": false
+          }
+        ]
+      },
+      {
+        "name": "Mesh to Points",
+        "label": "",
+        "type": "MESH_TO_POINTS",
+        "bl_idname": "GeometryNodeMeshToPoints",
+        "location": [
+          368.640869140625,
+          378.8048095703125
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Mesh",
+            "identifier": "Mesh",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          },
+          {
+            "name": "Selection",
+            "identifier": "Selection",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": true
+          },
+          {
+            "name": "Position",
+            "identifier": "Position",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "Radius",
+            "identifier": "Radius",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloatDistance",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.05000000074505806
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Points",
+            "identifier": "Points",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          }
+        ]
+      },
+      {
+        "name": "Instance on Points",
+        "label": "",
+        "type": "INSTANCE_ON_POINTS",
+        "bl_idname": "GeometryNodeInstanceOnPoints",
+        "location": [
+          1428.9971923828125,
+          146.03903198242188
+        ],
+        "width": 127.40814208984375,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Points",
+            "identifier": "Points",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          },
+          {
+            "name": "Selection",
+            "identifier": "Selection",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": true
+          },
+          {
+            "name": "Instance",
+            "identifier": "Instance",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          },
+          {
+            "name": "Pick Instance",
+            "identifier": "Pick Instance",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": true
+          },
+          {
+            "name": "Instance Index",
+            "identifier": "Instance Index",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "Rotation",
+            "identifier": "Rotation",
+            "type": "ROTATION",
+            "bl_idname": "NodeSocketRotation",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "Scale",
+            "identifier": "Scale",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVectorXYZ",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Instances",
+            "identifier": "Instances",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          }
+        ]
+      },
+      {
+        "name": "Separate XYZ",
+        "label": "",
+        "type": "SEPXYZ",
+        "bl_idname": "ShaderNodeSeparateXYZ",
+        "location": [
+          -1630.40087890625,
+          -135.02420043945312
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Vector",
+            "identifier": "Vector",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ],
+        "outputs": [
+          {
+            "name": "X",
+            "identifier": "X",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Y",
+            "identifier": "Y",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Z",
+            "identifier": "Z",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          }
+        ]
+      },
+      {
+        "name": "Compare",
+        "label": "",
+        "type": "COMPARE",
+        "bl_idname": "FunctionNodeCompare",
+        "location": [
+          -1394.425537109375,
+          -22.05523681640625
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "A",
+            "identifier": "A",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.700000524520874
+          },
+          {
+            "name": "B",
+            "identifier": "B",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": -0.7999995946884155
+          },
+          {
+            "name": "A",
+            "identifier": "A_INT",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "B",
+            "identifier": "B_INT",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 17
+          },
+          {
+            "name": "A",
+            "identifier": "A_VEC3",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "B",
+            "identifier": "B_VEC3",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "A",
+            "identifier": "A_COL",
+            "type": "RGBA",
+            "bl_idname": "NodeSocketColor",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1.0
+            ]
+          },
+          {
+            "name": "B",
+            "identifier": "B_COL",
+            "type": "RGBA",
+            "bl_idname": "NodeSocketColor",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1.0
+            ]
+          },
+          {
+            "name": "A",
+            "identifier": "A_STR",
+            "type": "STRING",
+            "bl_idname": "NodeSocketString",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": ""
+          },
+          {
+            "name": "B",
+            "identifier": "B_STR",
+            "type": "STRING",
+            "bl_idname": "NodeSocketString",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": ""
+          },
+          {
+            "name": "C",
+            "identifier": "C",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.8999999761581421
+          },
+          {
+            "name": "Angle",
+            "identifier": "Angle",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloatAngle",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.08726649731397629
+          },
+          {
+            "name": "Epsilon",
+            "identifier": "Epsilon",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 2.300999879837036
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Result",
+            "identifier": "Result",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ]
+      },
+      {
+        "name": "Position.001",
+        "label": "",
+        "type": "POSITION",
+        "bl_idname": "GeometryNodeInputPosition",
+        "location": [
+          -1809.8017578125,
+          -178.17410278320312
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "Position",
+            "identifier": "Position",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Viewer",
+        "label": "",
+        "type": "VIEWER",
+        "bl_idname": "GeometryNodeViewer",
+        "location": [
+          81.13894653320312,
+          -173.1415252685547
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Geometry",
+            "identifier": "Geometry",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          },
+          {
+            "name": "Value",
+            "identifier": "Value",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ],
+        "outputs": []
+      },
+      {
+        "name": "Join Geometry",
+        "label": "",
+        "type": "JOIN_GEOMETRY",
+        "bl_idname": "GeometryNodeJoinGeometry",
+        "location": [
+          3622.770751953125,
+          365.9190368652344
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Geometry",
+            "identifier": "Geometry",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": true
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Geometry",
+            "identifier": "Geometry",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          }
+        ]
+      },
+      {
+        "name": "Reroute",
+        "label": "",
+        "type": "REROUTE",
+        "bl_idname": "NodeReroute",
+        "location": [
+          204.344482421875,
+          1021.1102905273438
+        ],
+        "width": 10.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Input",
+            "identifier": "Input",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Output",
+            "identifier": "Output",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          }
+        ]
+      },
+      {
+        "name": "Compare.004",
+        "label": "",
+        "type": "COMPARE",
+        "bl_idname": "FunctionNodeCompare",
+        "location": [
+          443.7105712890625,
+          -36.45611572265625
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "A",
+            "identifier": "A",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "B",
+            "identifier": "B",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": -0.10000082850456238
+          },
+          {
+            "name": "A",
+            "identifier": "A_INT",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "B",
+            "identifier": "B_INT",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "A",
+            "identifier": "A_VEC3",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "B",
+            "identifier": "B_VEC3",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "A",
+            "identifier": "A_COL",
+            "type": "RGBA",
+            "bl_idname": "NodeSocketColor",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1.0
+            ]
+          },
+          {
+            "name": "B",
+            "identifier": "B_COL",
+            "type": "RGBA",
+            "bl_idname": "NodeSocketColor",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1.0
+            ]
+          },
+          {
+            "name": "A",
+            "identifier": "A_STR",
+            "type": "STRING",
+            "bl_idname": "NodeSocketString",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": ""
+          },
+          {
+            "name": "B",
+            "identifier": "B_STR",
+            "type": "STRING",
+            "bl_idname": "NodeSocketString",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": ""
+          },
+          {
+            "name": "C",
+            "identifier": "C",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.8999999761581421
+          },
+          {
+            "name": "Angle",
+            "identifier": "Angle",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloatAngle",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.08726649731397629
+          },
+          {
+            "name": "Epsilon",
+            "identifier": "Epsilon",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 8.900996208190918
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Result",
+            "identifier": "Result",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ]
+      },
+      {
+        "name": "Separate XYZ.004",
+        "label": "",
+        "type": "SEPXYZ",
+        "bl_idname": "ShaderNodeSeparateXYZ",
+        "location": [
+          221.319091796875,
+          -126.2554931640625
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Vector",
+            "identifier": "Vector",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ],
+        "outputs": [
+          {
+            "name": "X",
+            "identifier": "X",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Y",
+            "identifier": "Y",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Z",
+            "identifier": "Z",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          }
+        ]
+      },
+      {
+        "name": "Normal.005",
+        "label": "",
+        "type": "INPUT_NORMAL",
+        "bl_idname": "GeometryNodeInputNormal",
+        "location": [
+          29.59716796875,
+          -188.17742919921875
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "Normal",
+            "identifier": "Normal",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "True Normal",
+            "identifier": "True Normal",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Boolean Math.002",
+        "label": "",
+        "type": "BOOLEAN_MATH",
+        "bl_idname": "FunctionNodeBooleanMath",
+        "location": [
+          -1036.607666015625,
+          88.82911682128906
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Boolean",
+            "identifier": "Boolean",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          },
+          {
+            "name": "Boolean",
+            "identifier": "Boolean_001",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Boolean",
+            "identifier": "Boolean",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ]
+      },
+      {
+        "name": "Frame",
+        "label": "1F Ceil",
+        "type": "FRAME",
+        "bl_idname": "NodeFrame",
+        "location": [
+          -2032.0,
+          -399.0
+        ],
+        "width": 614.0,
+        "height": 290.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [],
+        "outputs": []
+      },
+      {
+        "name": "Boolean Math.003",
+        "label": "",
+        "type": "BOOLEAN_MATH",
+        "bl_idname": "FunctionNodeBooleanMath",
+        "location": [
+          -529.7507934570312,
+          -29.18877410888672
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Boolean",
+            "identifier": "Boolean",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          },
+          {
+            "name": "Boolean",
+            "identifier": "Boolean_001",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Boolean",
+            "identifier": "Boolean",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ]
+      },
+      {
+        "name": "Separate XYZ.001",
+        "label": "",
+        "type": "SEPXYZ",
+        "bl_idname": "ShaderNodeSeparateXYZ",
+        "location": [
+          -1021.931640625,
+          -264.6791076660156
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Vector",
+            "identifier": "Vector",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ],
+        "outputs": [
+          {
+            "name": "X",
+            "identifier": "X",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Y",
+            "identifier": "Y",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Z",
+            "identifier": "Z",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          }
+        ]
+      },
+      {
+        "name": "Compare.001",
+        "label": "",
+        "type": "COMPARE",
+        "bl_idname": "FunctionNodeCompare",
+        "location": [
+          -799.5140991210938,
+          -164.309814453125
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": true,
+        "inputs": [
+          {
+            "name": "A",
+            "identifier": "A",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 1.200000524520874
+          },
+          {
+            "name": "B",
+            "identifier": "B",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 3.799999713897705
+          },
+          {
+            "name": "A",
+            "identifier": "A_INT",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "B",
+            "identifier": "B_INT",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 17
+          },
+          {
+            "name": "A",
+            "identifier": "A_VEC3",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "B",
+            "identifier": "B_VEC3",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "A",
+            "identifier": "A_COL",
+            "type": "RGBA",
+            "bl_idname": "NodeSocketColor",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1.0
+            ]
+          },
+          {
+            "name": "B",
+            "identifier": "B_COL",
+            "type": "RGBA",
+            "bl_idname": "NodeSocketColor",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1.0
+            ]
+          },
+          {
+            "name": "A",
+            "identifier": "A_STR",
+            "type": "STRING",
+            "bl_idname": "NodeSocketString",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": ""
+          },
+          {
+            "name": "B",
+            "identifier": "B_STR",
+            "type": "STRING",
+            "bl_idname": "NodeSocketString",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": ""
+          },
+          {
+            "name": "C",
+            "identifier": "C",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.8999999761581421
+          },
+          {
+            "name": "Angle",
+            "identifier": "Angle",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloatAngle",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.08726649731397629
+          },
+          {
+            "name": "Epsilon",
+            "identifier": "Epsilon",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.7009997367858887
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Result",
+            "identifier": "Result",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ]
+      },
+      {
+        "name": "Position.002",
+        "label": "",
+        "type": "POSITION",
+        "bl_idname": "GeometryNodeInputPosition",
+        "location": [
+          -1201.3326416015625,
+          -307.8290100097656
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "Position",
+            "identifier": "Position",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Transform Geometry",
+        "label": "",
+        "type": "TRANSFORM_GEOMETRY",
+        "bl_idname": "GeometryNodeTransform",
+        "location": [
+          943.3927001953125,
+          -364.4029541015625
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Geometry",
+            "identifier": "Geometry",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          },
+          {
+            "name": "Translation",
+            "identifier": "Translation",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVectorTranslation",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.3999999761581421,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "Rotation",
+            "identifier": "Rotation",
+            "type": "ROTATION",
+            "bl_idname": "NodeSocketRotation",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "Scale",
+            "identifier": "Scale",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVectorXYZ",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "name": "Transform",
+            "identifier": "Transform",
+            "type": "MATRIX",
+            "bl_idname": "NodeSocketMatrix",
+            "is_linked": false,
+            "is_multi_input": false
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Geometry",
+            "identifier": "Geometry",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          }
+        ]
+      },
+      {
+        "name": "Boolean Math.004",
+        "label": "",
+        "type": "BOOLEAN_MATH",
+        "bl_idname": "FunctionNodeBooleanMath",
+        "location": [
+          -249.75062561035156,
+          66.52299499511719
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Boolean",
+            "identifier": "Boolean",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          },
+          {
+            "name": "Boolean",
+            "identifier": "Boolean_001",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Boolean",
+            "identifier": "Boolean",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ]
+      },
+      {
+        "name": "Normal",
+        "label": "",
+        "type": "INPUT_NORMAL",
+        "bl_idname": "GeometryNodeInputNormal",
+        "location": [
+          -1195.1748046875,
+          -571.9089965820312
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "Normal",
+            "identifier": "Normal",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "True Normal",
+            "identifier": "True Normal",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Separate XYZ.002",
+        "label": "",
+        "type": "SEPXYZ",
+        "bl_idname": "ShaderNodeSeparateXYZ",
+        "location": [
+          -1016.36083984375,
+          -437.2098083496094
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Vector",
+            "identifier": "Vector",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ],
+        "outputs": [
+          {
+            "name": "X",
+            "identifier": "X",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Y",
+            "identifier": "Y",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Z",
+            "identifier": "Z",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          }
+        ]
+      },
+      {
+        "name": "Compare.002",
+        "label": "",
+        "type": "COMPARE",
+        "bl_idname": "FunctionNodeCompare",
+        "location": [
+          -805.5330810546875,
+          -370.8047790527344
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "A",
+            "identifier": "A",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 1.200000524520874
+          },
+          {
+            "name": "B",
+            "identifier": "B",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.4000007212162018
+          },
+          {
+            "name": "A",
+            "identifier": "A_INT",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "B",
+            "identifier": "B_INT",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 17
+          },
+          {
+            "name": "A",
+            "identifier": "A_VEC3",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "B",
+            "identifier": "B_VEC3",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "A",
+            "identifier": "A_COL",
+            "type": "RGBA",
+            "bl_idname": "NodeSocketColor",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1.0
+            ]
+          },
+          {
+            "name": "B",
+            "identifier": "B_COL",
+            "type": "RGBA",
+            "bl_idname": "NodeSocketColor",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1.0
+            ]
+          },
+          {
+            "name": "A",
+            "identifier": "A_STR",
+            "type": "STRING",
+            "bl_idname": "NodeSocketString",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": ""
+          },
+          {
+            "name": "B",
+            "identifier": "B_STR",
+            "type": "STRING",
+            "bl_idname": "NodeSocketString",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": ""
+          },
+          {
+            "name": "C",
+            "identifier": "C",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.8999999761581421
+          },
+          {
+            "name": "Angle",
+            "identifier": "Angle",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloatAngle",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.08726649731397629
+          },
+          {
+            "name": "Epsilon",
+            "identifier": "Epsilon",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.7009997367858887
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Result",
+            "identifier": "Result",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ]
+      },
+      {
+        "name": "Collection Info",
+        "label": "",
+        "type": "COLLECTION_INFO",
+        "bl_idname": "GeometryNodeCollectionInfo",
+        "location": [
+          480.72503662109375,
+          -457.06439208984375
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Collection",
+            "identifier": "Collection",
+            "type": "COLLECTION",
+            "bl_idname": "NodeSocketCollection",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": "Signboard"
+          },
+          {
+            "name": "Separate Children",
+            "identifier": "Separate Children",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": true
+          },
+          {
+            "name": "Reset Children",
+            "identifier": "Reset Children",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": true
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Instances",
+            "identifier": "Instances",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          }
+        ]
+      },
+      {
+        "name": "Random Value",
+        "label": "",
+        "type": "RANDOM_VALUE",
+        "bl_idname": "FunctionNodeRandomValue",
+        "location": [
+          259.99761962890625,
+          -460.1026916503906
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Min",
+            "identifier": "Min",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "Max",
+            "identifier": "Max",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "name": "Min",
+            "identifier": "Min_001",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Max",
+            "identifier": "Max_001",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 1.0
+          },
+          {
+            "name": "Min",
+            "identifier": "Min_002",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "Max",
+            "identifier": "Max_002",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 50
+          },
+          {
+            "name": "Probability",
+            "identifier": "Probability",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloatFactor",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.5
+          },
+          {
+            "name": "ID",
+            "identifier": "ID",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "Seed",
+            "identifier": "Seed",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 49
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Value",
+            "identifier": "Value",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "Value",
+            "identifier": "Value_001",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Value",
+            "identifier": "Value_002",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "Value",
+            "identifier": "Value_003",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ]
+      },
+      {
+        "name": "Mesh to Points.001",
+        "label": "",
+        "type": "MESH_TO_POINTS",
+        "bl_idname": "GeometryNodeMeshToPoints",
+        "location": [
+          752.9240112304688,
+          -36.3582763671875
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Mesh",
+            "identifier": "Mesh",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          },
+          {
+            "name": "Selection",
+            "identifier": "Selection",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": true
+          },
+          {
+            "name": "Position",
+            "identifier": "Position",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "Radius",
+            "identifier": "Radius",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloatDistance",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 1.2499998807907104
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Points",
+            "identifier": "Points",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          }
+        ]
+      },
+      {
+        "name": "Instance on Points.001",
+        "label": "",
+        "type": "INSTANCE_ON_POINTS",
+        "bl_idname": "GeometryNodeInstanceOnPoints",
+        "location": [
+          1444.1539306640625,
+          -210.6168212890625
+        ],
+        "width": 127.40814208984375,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Points",
+            "identifier": "Points",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          },
+          {
+            "name": "Selection",
+            "identifier": "Selection",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": true
+          },
+          {
+            "name": "Instance",
+            "identifier": "Instance",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          },
+          {
+            "name": "Pick Instance",
+            "identifier": "Pick Instance",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": true
+          },
+          {
+            "name": "Instance Index",
+            "identifier": "Instance Index",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "Rotation",
+            "identifier": "Rotation",
+            "type": "ROTATION",
+            "bl_idname": "NodeSocketRotation",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "Scale",
+            "identifier": "Scale",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVectorXYZ",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Instances",
+            "identifier": "Instances",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          }
+        ]
+      },
+      {
+        "name": "Transform Geometry.001",
+        "label": "",
+        "type": "TRANSFORM_GEOMETRY",
+        "bl_idname": "GeometryNodeTransform",
+        "location": [
+          841.4218139648438,
+          -594.2926025390625
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Geometry",
+            "identifier": "Geometry",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          },
+          {
+            "name": "Translation",
+            "identifier": "Translation",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVectorTranslation",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              -1.1920928955078125e-07,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "Rotation",
+            "identifier": "Rotation",
+            "type": "ROTATION",
+            "bl_idname": "NodeSocketRotation",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              -1.5707963705062866
+            ]
+          },
+          {
+            "name": "Scale",
+            "identifier": "Scale",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVectorXYZ",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "name": "Transform",
+            "identifier": "Transform",
+            "type": "MATRIX",
+            "bl_idname": "NodeSocketMatrix",
+            "is_linked": false,
+            "is_multi_input": false
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Geometry",
+            "identifier": "Geometry",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          }
+        ]
+      },
+      {
+        "name": "Collection Info.001",
+        "label": "",
+        "type": "COLLECTION_INFO",
+        "bl_idname": "GeometryNodeCollectionInfo",
+        "location": [
+          600.0422973632812,
+          -424.4111328125
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Collection",
+            "identifier": "Collection",
+            "type": "COLLECTION",
+            "bl_idname": "NodeSocketCollection",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": "Signboard_vertical"
+          },
+          {
+            "name": "Separate Children",
+            "identifier": "Separate Children",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": true
+          },
+          {
+            "name": "Reset Children",
+            "identifier": "Reset Children",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": true
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Instances",
+            "identifier": "Instances",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          }
+        ]
+      },
+      {
+        "name": "Random Value.001",
+        "label": "",
+        "type": "RANDOM_VALUE",
+        "bl_idname": "FunctionNodeRandomValue",
+        "location": [
+          291.0341491699219,
+          -697.1517333984375
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Min",
+            "identifier": "Min",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "Max",
+            "identifier": "Max",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "name": "Min",
+            "identifier": "Min_001",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Max",
+            "identifier": "Max_001",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 1.0
+          },
+          {
+            "name": "Min",
+            "identifier": "Min_002",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "Max",
+            "identifier": "Max_002",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 50
+          },
+          {
+            "name": "Probability",
+            "identifier": "Probability",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloatFactor",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.5
+          },
+          {
+            "name": "ID",
+            "identifier": "ID",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "Seed",
+            "identifier": "Seed",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 26
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Value",
+            "identifier": "Value",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "Value",
+            "identifier": "Value_001",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Value",
+            "identifier": "Value_002",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "Value",
+            "identifier": "Value_003",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ]
+      },
+      {
+        "name": "Reroute.001",
+        "label": "",
+        "type": "REROUTE",
+        "bl_idname": "NodeReroute",
+        "location": [
+          1914.7064208984375,
+          100.954345703125
+        ],
+        "width": 10.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Input",
+            "identifier": "Input",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Output",
+            "identifier": "Output",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          }
+        ]
+      },
+      {
+        "name": "Normal.001",
+        "label": "",
+        "type": "INPUT_NORMAL",
+        "bl_idname": "GeometryNodeInputNormal",
+        "location": [
+          30.40185546875,
+          -212.00146484375
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "Normal",
+            "identifier": "Normal",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "True Normal",
+            "identifier": "True Normal",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Separate XYZ.003",
+        "label": "",
+        "type": "SEPXYZ",
+        "bl_idname": "ShaderNodeSeparateXYZ",
+        "location": [
+          315.765625,
+          -288.6331787109375
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Vector",
+            "identifier": "Vector",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ],
+        "outputs": [
+          {
+            "name": "X",
+            "identifier": "X",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Y",
+            "identifier": "Y",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Z",
+            "identifier": "Z",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          }
+        ]
+      },
+      {
+        "name": "Compare.003",
+        "label": "",
+        "type": "COMPARE",
+        "bl_idname": "FunctionNodeCompare",
+        "location": [
+          560.68408203125,
+          -245.1307373046875
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "A",
+            "identifier": "A",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "B",
+            "identifier": "B",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.5999999046325684
+          },
+          {
+            "name": "A",
+            "identifier": "A_INT",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "B",
+            "identifier": "B_INT",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "A",
+            "identifier": "A_VEC3",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "B",
+            "identifier": "B_VEC3",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "A",
+            "identifier": "A_COL",
+            "type": "RGBA",
+            "bl_idname": "NodeSocketColor",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1.0
+            ]
+          },
+          {
+            "name": "B",
+            "identifier": "B_COL",
+            "type": "RGBA",
+            "bl_idname": "NodeSocketColor",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1.0
+            ]
+          },
+          {
+            "name": "A",
+            "identifier": "A_STR",
+            "type": "STRING",
+            "bl_idname": "NodeSocketString",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": ""
+          },
+          {
+            "name": "B",
+            "identifier": "B_STR",
+            "type": "STRING",
+            "bl_idname": "NodeSocketString",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": ""
+          },
+          {
+            "name": "C",
+            "identifier": "C",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.8999999761581421
+          },
+          {
+            "name": "Angle",
+            "identifier": "Angle",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloatAngle",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.08726649731397629
+          },
+          {
+            "name": "Epsilon",
+            "identifier": "Epsilon",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0010000000474974513
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Result",
+            "identifier": "Result",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ]
+      },
+      {
+        "name": "Separate XYZ.005",
+        "label": "",
+        "type": "SEPXYZ",
+        "bl_idname": "ShaderNodeSeparateXYZ",
+        "location": [
+          319.528076171875,
+          -79.4468994140625
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Vector",
+            "identifier": "Vector",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ],
+        "outputs": [
+          {
+            "name": "X",
+            "identifier": "X",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Y",
+            "identifier": "Y",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Z",
+            "identifier": "Z",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          }
+        ]
+      },
+      {
+        "name": "Compare.005",
+        "label": "",
+        "type": "COMPARE",
+        "bl_idname": "FunctionNodeCompare",
+        "location": [
+          564.446533203125,
+          -35.9444580078125
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "A",
+            "identifier": "A",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "B",
+            "identifier": "B",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": -0.4999999701976776
+          },
+          {
+            "name": "A",
+            "identifier": "A_INT",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "B",
+            "identifier": "B_INT",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "A",
+            "identifier": "A_VEC3",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "B",
+            "identifier": "B_VEC3",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "A",
+            "identifier": "A_COL",
+            "type": "RGBA",
+            "bl_idname": "NodeSocketColor",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1.0
+            ]
+          },
+          {
+            "name": "B",
+            "identifier": "B_COL",
+            "type": "RGBA",
+            "bl_idname": "NodeSocketColor",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1.0
+            ]
+          },
+          {
+            "name": "A",
+            "identifier": "A_STR",
+            "type": "STRING",
+            "bl_idname": "NodeSocketString",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": ""
+          },
+          {
+            "name": "B",
+            "identifier": "B_STR",
+            "type": "STRING",
+            "bl_idname": "NodeSocketString",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": ""
+          },
+          {
+            "name": "C",
+            "identifier": "C",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.8999999761581421
+          },
+          {
+            "name": "Angle",
+            "identifier": "Angle",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloatAngle",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.08726649731397629
+          },
+          {
+            "name": "Epsilon",
+            "identifier": "Epsilon",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.9009999632835388
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Result",
+            "identifier": "Result",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ]
+      },
+      {
+        "name": "Boolean Math",
+        "label": "",
+        "type": "BOOLEAN_MATH",
+        "bl_idname": "FunctionNodeBooleanMath",
+        "location": [
+          829.1435546875,
+          -57.1517333984375
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Boolean",
+            "identifier": "Boolean",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          },
+          {
+            "name": "Boolean",
+            "identifier": "Boolean_001",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Boolean",
+            "identifier": "Boolean",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ]
+      },
+      {
+        "name": "Edge Vertices",
+        "label": "",
+        "type": "MESH_EDGE_VERTICES",
+        "bl_idname": "GeometryNodeInputMeshEdgeVertices",
+        "location": [
+          414.642333984375,
+          -891.29931640625
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "Vertex Index 1",
+            "identifier": "Vertex Index 1",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "Vertex Index 2",
+            "identifier": "Vertex Index 2",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "Position 1",
+            "identifier": "Position 1",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "Position 2",
+            "identifier": "Position 2",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Vector Math",
+        "label": "",
+        "type": "VECT_MATH",
+        "bl_idname": "ShaderNodeVectorMath",
+        "location": [
+          609.056884765625,
+          -832.693359375
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Vector",
+            "identifier": "Vector",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "Vector",
+            "identifier": "Vector_001",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "Vector",
+            "identifier": "Vector_002",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "Scale",
+            "identifier": "Scale",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 1.0
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Vector",
+            "identifier": "Vector",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "Value",
+            "identifier": "Value",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          }
+        ]
+      },
+      {
+        "name": "Separate XYZ.006",
+        "label": "",
+        "type": "SEPXYZ",
+        "bl_idname": "ShaderNodeSeparateXYZ",
+        "location": [
+          777.361083984375,
+          -765.048583984375
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Vector",
+            "identifier": "Vector",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ],
+        "outputs": [
+          {
+            "name": "X",
+            "identifier": "X",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Y",
+            "identifier": "Y",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Z",
+            "identifier": "Z",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          }
+        ]
+      },
+      {
+        "name": "Math",
+        "label": "",
+        "type": "MATH",
+        "bl_idname": "ShaderNodeMath",
+        "location": [
+          938.058349609375,
+          -636.932373046875
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Value",
+            "identifier": "Value",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.5
+          },
+          {
+            "name": "Value",
+            "identifier": "Value_001",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.5
+          },
+          {
+            "name": "Value",
+            "identifier": "Value_002",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.5
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Value",
+            "identifier": "Value",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          }
+        ]
+      },
+      {
+        "name": "Compare.006",
+        "label": "",
+        "type": "COMPARE",
+        "bl_idname": "FunctionNodeCompare",
+        "location": [
+          1123.56884765625,
+          -614.85205078125
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "A",
+            "identifier": "A",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "B",
+            "identifier": "B",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.009999999776482582
+          },
+          {
+            "name": "A",
+            "identifier": "A_INT",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "B",
+            "identifier": "B_INT",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "A",
+            "identifier": "A_VEC3",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "B",
+            "identifier": "B_VEC3",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "A",
+            "identifier": "A_COL",
+            "type": "RGBA",
+            "bl_idname": "NodeSocketColor",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1.0
+            ]
+          },
+          {
+            "name": "B",
+            "identifier": "B_COL",
+            "type": "RGBA",
+            "bl_idname": "NodeSocketColor",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1.0
+            ]
+          },
+          {
+            "name": "A",
+            "identifier": "A_STR",
+            "type": "STRING",
+            "bl_idname": "NodeSocketString",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": ""
+          },
+          {
+            "name": "B",
+            "identifier": "B_STR",
+            "type": "STRING",
+            "bl_idname": "NodeSocketString",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": ""
+          },
+          {
+            "name": "C",
+            "identifier": "C",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.8999999761581421
+          },
+          {
+            "name": "Angle",
+            "identifier": "Angle",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloatAngle",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.08726649731397629
+          },
+          {
+            "name": "Epsilon",
+            "identifier": "Epsilon",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0010000000474974513
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Result",
+            "identifier": "Result",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ]
+      },
+      {
+        "name": "Boolean Math.001",
+        "label": "",
+        "type": "BOOLEAN_MATH",
+        "bl_idname": "FunctionNodeBooleanMath",
+        "location": [
+          1530.95166015625,
+          -197.549560546875
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Boolean",
+            "identifier": "Boolean",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          },
+          {
+            "name": "Boolean",
+            "identifier": "Boolean_001",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Boolean",
+            "identifier": "Boolean",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ]
+      },
+      {
+        "name": "Frame.001",
+        "label": "On Vertical Edges",
+        "type": "FRAME",
+        "bl_idname": "NodeFrame",
+        "location": [
+          -2132.0,
+          -1318.0
+        ],
+        "width": 1889.0,
+        "height": 1037.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [],
+        "outputs": []
+      },
+      {
+        "name": "Frame.002",
+        "label": "Vertical Signboard",
+        "type": "FRAME",
+        "bl_idname": "NodeFrame",
+        "location": [
+          -101.0,
+          -1234.0
+        ],
+        "width": 1601.408203125,
+        "height": 894.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [],
+        "outputs": []
+      },
+      {
+        "name": "Set Position",
+        "label": "",
+        "type": "SET_POSITION",
+        "bl_idname": "GeometryNodeSetPosition",
+        "location": [
+          -27.648162841796875,
+          -877.10595703125
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Geometry",
+            "identifier": "Geometry",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          },
+          {
+            "name": "Selection",
+            "identifier": "Selection",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": true
+          },
+          {
+            "name": "Position",
+            "identifier": "Position",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "Offset",
+            "identifier": "Offset",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVectorTranslation",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Geometry",
+            "identifier": "Geometry",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          }
+        ]
+      },
+      {
+        "name": "Separate XYZ.007",
+        "label": "",
+        "type": "SEPXYZ",
+        "bl_idname": "ShaderNodeSeparateXYZ",
+        "location": [
+          223.103759765625,
+          -131.986572265625
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Vector",
+            "identifier": "Vector",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ],
+        "outputs": [
+          {
+            "name": "X",
+            "identifier": "X",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Y",
+            "identifier": "Y",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Z",
+            "identifier": "Z",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          }
+        ]
+      },
+      {
+        "name": "Position.003",
+        "label": "",
+        "type": "POSITION",
+        "bl_idname": "GeometryNodeInputPosition",
+        "location": [
+          29.602783203125,
+          -193.1309814453125
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "Position",
+            "identifier": "Position",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Math.001",
+        "label": "",
+        "type": "MATH",
+        "bl_idname": "ShaderNodeMath",
+        "location": [
+          407.9794921875,
+          -66.93310546875
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Value",
+            "identifier": "Value",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.5
+          },
+          {
+            "name": "Value",
+            "identifier": "Value_001",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.5
+          },
+          {
+            "name": "Value",
+            "identifier": "Value_002",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.5
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Value",
+            "identifier": "Value",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          }
+        ]
+      },
+      {
+        "name": "Math.002",
+        "label": "",
+        "type": "MATH",
+        "bl_idname": "ShaderNodeMath",
+        "location": [
+          592.822265625,
+          -47.20947265625
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Value",
+            "identifier": "Value",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.5
+          },
+          {
+            "name": "Value",
+            "identifier": "Value_001",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": -0.3999999463558197
+          },
+          {
+            "name": "Value",
+            "identifier": "Value_002",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.5
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Value",
+            "identifier": "Value",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          }
+        ]
+      },
+      {
+        "name": "Combine XYZ.003",
+        "label": "",
+        "type": "COMBXYZ",
+        "bl_idname": "ShaderNodeCombineXYZ",
+        "location": [
+          945.856689453125,
+          -36.399658203125
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "X",
+            "identifier": "X",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Y",
+            "identifier": "Y",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Z",
+            "identifier": "Z",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Vector",
+            "identifier": "Vector",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Math.003",
+        "label": "",
+        "type": "MATH",
+        "bl_idname": "ShaderNodeMath",
+        "location": [
+          416.542724609375,
+          -257.8955078125
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Value",
+            "identifier": "Value",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.5
+          },
+          {
+            "name": "Value",
+            "identifier": "Value_001",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.5
+          },
+          {
+            "name": "Value",
+            "identifier": "Value_002",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.5
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Value",
+            "identifier": "Value",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          }
+        ]
+      },
+      {
+        "name": "Math.004",
+        "label": "",
+        "type": "MATH",
+        "bl_idname": "ShaderNodeMath",
+        "location": [
+          601.3857421875,
+          -238.1719970703125
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Value",
+            "identifier": "Value",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.5
+          },
+          {
+            "name": "Value",
+            "identifier": "Value_001",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Value",
+            "identifier": "Value_002",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.5
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Value",
+            "identifier": "Value",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          }
+        ]
+      },
+      {
+        "name": "Frame.003",
+        "label": "限制範圍",
+        "type": "FRAME",
+        "bl_idname": "NodeFrame",
+        "location": [
+          -1803.0,
+          -816.0
+        ],
+        "width": 1116.0,
+        "height": 416.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [],
+        "outputs": []
+      },
+      {
+        "name": "Random Value.003",
+        "label": "",
+        "type": "RANDOM_VALUE",
+        "bl_idname": "FunctionNodeRandomValue",
+        "location": [
+          108.10993957519531,
+          -295.4842529296875
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Min",
+            "identifier": "Min",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "Max",
+            "identifier": "Max",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "name": "Min",
+            "identifier": "Min_001",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": -0.10000000149011612
+          },
+          {
+            "name": "Max",
+            "identifier": "Max_001",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.30000007152557373
+          },
+          {
+            "name": "Min",
+            "identifier": "Min_002",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "Max",
+            "identifier": "Max_002",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 100
+          },
+          {
+            "name": "Probability",
+            "identifier": "Probability",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloatFactor",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.6333333253860474
+          },
+          {
+            "name": "ID",
+            "identifier": "ID",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "Seed",
+            "identifier": "Seed",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 1
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Value",
+            "identifier": "Value",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "Value",
+            "identifier": "Value_001",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Value",
+            "identifier": "Value_002",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "Value",
+            "identifier": "Value_003",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ]
+      },
+      {
+        "name": "Boolean Math.005",
+        "label": "",
+        "type": "BOOLEAN_MATH",
+        "bl_idname": "FunctionNodeBooleanMath",
+        "location": [
+          407.59356689453125,
+          -99.7149658203125
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Boolean",
+            "identifier": "Boolean",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          },
+          {
+            "name": "Boolean",
+            "identifier": "Boolean_001",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Boolean",
+            "identifier": "Boolean",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ]
+      },
+      {
+        "name": "Position",
+        "label": "",
+        "type": "POSITION",
+        "bl_idname": "GeometryNodeInputPosition",
+        "location": [
+          -539.1498413085938,
+          -1212.4404296875
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "Position",
+            "identifier": "Position",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Vector Math.001",
+        "label": "",
+        "type": "VECT_MATH",
+        "bl_idname": "ShaderNodeVectorMath",
+        "location": [
+          -268.4356994628906,
+          -1026.1082763671875
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Vector",
+            "identifier": "Vector",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "Vector",
+            "identifier": "Vector_001",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              3.5762786865234375e-07,
+              1.0999999046325684,
+              5.701000213623047
+            ]
+          },
+          {
+            "name": "Vector",
+            "identifier": "Vector_002",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "Scale",
+            "identifier": "Scale",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 1.0
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Vector",
+            "identifier": "Vector",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "Value",
+            "identifier": "Value",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          }
+        ]
+      },
+      {
+        "name": "Compare.007",
+        "label": "",
+        "type": "COMPARE",
+        "bl_idname": "FunctionNodeCompare",
+        "location": [
+          841.8775634765625,
+          -247.746337890625
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "A",
+            "identifier": "A",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "B",
+            "identifier": "B",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 1.4000000953674316
+          },
+          {
+            "name": "A",
+            "identifier": "A_INT",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "B",
+            "identifier": "B_INT",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "A",
+            "identifier": "A_VEC3",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "B",
+            "identifier": "B_VEC3",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "A",
+            "identifier": "A_COL",
+            "type": "RGBA",
+            "bl_idname": "NodeSocketColor",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1.0
+            ]
+          },
+          {
+            "name": "B",
+            "identifier": "B_COL",
+            "type": "RGBA",
+            "bl_idname": "NodeSocketColor",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1.0
+            ]
+          },
+          {
+            "name": "A",
+            "identifier": "A_STR",
+            "type": "STRING",
+            "bl_idname": "NodeSocketString",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": ""
+          },
+          {
+            "name": "B",
+            "identifier": "B_STR",
+            "type": "STRING",
+            "bl_idname": "NodeSocketString",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": ""
+          },
+          {
+            "name": "C",
+            "identifier": "C",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.8999999761581421
+          },
+          {
+            "name": "Angle",
+            "identifier": "Angle",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloatAngle",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.08726649731397629
+          },
+          {
+            "name": "Epsilon",
+            "identifier": "Epsilon",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0010000000474974513
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Result",
+            "identifier": "Result",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ]
+      },
+      {
+        "name": "Separate XYZ.008",
+        "label": "",
+        "type": "SEPXYZ",
+        "bl_idname": "ShaderNodeSeparateXYZ",
+        "location": [
+          513.2550048828125,
+          -496.5772705078125
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Vector",
+            "identifier": "Vector",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ],
+        "outputs": [
+          {
+            "name": "X",
+            "identifier": "X",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Y",
+            "identifier": "Y",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Z",
+            "identifier": "Z",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          }
+        ]
+      },
+      {
+        "name": "Boolean Math.006",
+        "label": "",
+        "type": "BOOLEAN_MATH",
+        "bl_idname": "FunctionNodeBooleanMath",
+        "location": [
+          1228.66455078125,
+          -55.00390625
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Boolean",
+            "identifier": "Boolean",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          },
+          {
+            "name": "Boolean",
+            "identifier": "Boolean_001",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Boolean",
+            "identifier": "Boolean",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ]
+      },
+      {
+        "name": "Merge by Distance",
+        "label": "",
+        "type": "MERGE_BY_DISTANCE",
+        "bl_idname": "GeometryNodeMergeByDistance",
+        "location": [
+          173.87588500976562,
+          -900.491943359375
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Geometry",
+            "identifier": "Geometry",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          },
+          {
+            "name": "Selection",
+            "identifier": "Selection",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": true
+          },
+          {
+            "name": "Distance",
+            "identifier": "Distance",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloatDistance",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.9999996423721313
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Geometry",
+            "identifier": "Geometry",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": true,
+            "is_multi_input": false
+          }
+        ]
+      },
+      {
+        "name": "Position.004",
+        "label": "",
+        "type": "POSITION",
+        "bl_idname": "GeometryNodeInputPosition",
+        "location": [
+          241.2974853515625,
+          -544.385009765625
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "Position",
+            "identifier": "Position",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Boolean Math.007",
+        "label": "",
+        "type": "BOOLEAN_MATH",
+        "bl_idname": "FunctionNodeBooleanMath",
+        "location": [
+          55.05195617675781,
+          147.05715942382812
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Boolean",
+            "identifier": "Boolean",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          },
+          {
+            "name": "Boolean",
+            "identifier": "Boolean_001",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Boolean",
+            "identifier": "Boolean",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ]
+      },
+      {
+        "name": "Separate XYZ.009",
+        "label": "",
+        "type": "SEPXYZ",
+        "bl_idname": "ShaderNodeSeparateXYZ",
+        "location": [
+          -317.43597412109375,
+          -296.5576171875
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Vector",
+            "identifier": "Vector",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ],
+        "outputs": [
+          {
+            "name": "X",
+            "identifier": "X",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Y",
+            "identifier": "Y",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Z",
+            "identifier": "Z",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          }
+        ]
+      },
+      {
+        "name": "Position.005",
+        "label": "",
+        "type": "POSITION",
+        "bl_idname": "GeometryNodeInputPosition",
+        "location": [
+          -474.691162109375,
+          -349.40692138671875
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "Position",
+            "identifier": "Position",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Compare.008",
+        "label": "",
+        "type": "COMPARE",
+        "bl_idname": "FunctionNodeCompare",
+        "location": [
+          -125.0,
+          -241.9051971435547
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "A",
+            "identifier": "A",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 1.200000524520874
+          },
+          {
+            "name": "B",
+            "identifier": "B",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 1.6999999284744263
+          },
+          {
+            "name": "A",
+            "identifier": "A_INT",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "B",
+            "identifier": "B_INT",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 17
+          },
+          {
+            "name": "A",
+            "identifier": "A_VEC3",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "B",
+            "identifier": "B_VEC3",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "A",
+            "identifier": "A_COL",
+            "type": "RGBA",
+            "bl_idname": "NodeSocketColor",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1.0
+            ]
+          },
+          {
+            "name": "B",
+            "identifier": "B_COL",
+            "type": "RGBA",
+            "bl_idname": "NodeSocketColor",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1.0
+            ]
+          },
+          {
+            "name": "A",
+            "identifier": "A_STR",
+            "type": "STRING",
+            "bl_idname": "NodeSocketString",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": ""
+          },
+          {
+            "name": "B",
+            "identifier": "B_STR",
+            "type": "STRING",
+            "bl_idname": "NodeSocketString",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": ""
+          },
+          {
+            "name": "C",
+            "identifier": "C",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.8999999761581421
+          },
+          {
+            "name": "Angle",
+            "identifier": "Angle",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloatAngle",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.08726649731397629
+          },
+          {
+            "name": "Epsilon",
+            "identifier": "Epsilon",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.7009997367858887
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Result",
+            "identifier": "Result",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ]
+      },
+      {
+        "name": "Group Input.001",
+        "label": "",
+        "type": "GROUP_INPUT",
+        "bl_idname": "NodeGroupInput",
+        "location": [
+          29.541061401367188,
+          -512.87353515625
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "Mesh",
+            "identifier": "Socket_1",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": false,
+            "is_multi_input": false
+          },
+          {
+            "name": "直立招牌大小",
+            "identifier": "Socket_2",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 20
+          },
+          {
+            "name": "直立招牌數量",
+            "identifier": "Socket_3",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 1
+          },
+          {
+            "name": "直立招牌_位置",
+            "identifier": "Socket_4",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVectorTranslation",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              -1.1920928955078125e-07,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "直立招牌_變變",
+            "identifier": "Socket_5",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 26
+          },
+          {
+            "name": "橫招牌_1變變",
+            "identifier": "Socket_6",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 49
+          },
+          {
+            "name": "",
+            "identifier": "__extend__",
+            "type": "CUSTOM",
+            "bl_idname": "NodeSocketVirtual",
+            "is_linked": false,
+            "is_multi_input": false
+          }
+        ]
+      },
+      {
+        "name": "Boolean Math.008",
+        "label": "",
+        "type": "BOOLEAN_MATH",
+        "bl_idname": "FunctionNodeBooleanMath",
+        "location": [
+          1719.4931640625,
+          -199.04638671875
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Boolean",
+            "identifier": "Boolean",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          },
+          {
+            "name": "Boolean",
+            "identifier": "Boolean_001",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Boolean",
+            "identifier": "Boolean",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ]
+      },
+      {
+        "name": "Separate XYZ.010",
+        "label": "",
+        "type": "SEPXYZ",
+        "bl_idname": "ShaderNodeSeparateXYZ",
+        "location": [
+          1277.5035400390625,
+          -793.971923828125
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "Vector",
+            "identifier": "Vector",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ],
+        "outputs": [
+          {
+            "name": "X",
+            "identifier": "X",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Y",
+            "identifier": "Y",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "Z",
+            "identifier": "Z",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0
+          }
+        ]
+      },
+      {
+        "name": "Position.006",
+        "label": "",
+        "type": "POSITION",
+        "bl_idname": "GeometryNodeInputPosition",
+        "location": [
+          1078.9979248046875,
+          -917.0029296875
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "Position",
+            "identifier": "Position",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Compare.009",
+        "label": "",
+        "type": "COMPARE",
+        "bl_idname": "FunctionNodeCompare",
+        "location": [
+          1457.473876953125,
+          -767.312255859375
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [
+          {
+            "name": "A",
+            "identifier": "A",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 0.0
+          },
+          {
+            "name": "B",
+            "identifier": "B",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 7.999999523162842
+          },
+          {
+            "name": "A",
+            "identifier": "A_INT",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "B",
+            "identifier": "B_INT",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0
+          },
+          {
+            "name": "A",
+            "identifier": "A_VEC3",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "B",
+            "identifier": "B_VEC3",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVector",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "A",
+            "identifier": "A_COL",
+            "type": "RGBA",
+            "bl_idname": "NodeSocketColor",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1.0
+            ]
+          },
+          {
+            "name": "B",
+            "identifier": "B_COL",
+            "type": "RGBA",
+            "bl_idname": "NodeSocketColor",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              0.800000011920929,
+              0.800000011920929,
+              0.800000011920929,
+              1.0
+            ]
+          },
+          {
+            "name": "A",
+            "identifier": "A_STR",
+            "type": "STRING",
+            "bl_idname": "NodeSocketString",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": ""
+          },
+          {
+            "name": "B",
+            "identifier": "B_STR",
+            "type": "STRING",
+            "bl_idname": "NodeSocketString",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": ""
+          },
+          {
+            "name": "C",
+            "identifier": "C",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.8999999761581421
+          },
+          {
+            "name": "Angle",
+            "identifier": "Angle",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloatAngle",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.08726649731397629
+          },
+          {
+            "name": "Epsilon",
+            "identifier": "Epsilon",
+            "type": "VALUE",
+            "bl_idname": "NodeSocketFloat",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 0.0010000000474974513
+          }
+        ],
+        "outputs": [
+          {
+            "name": "Result",
+            "identifier": "Result",
+            "type": "BOOLEAN",
+            "bl_idname": "NodeSocketBool",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": false
+          }
+        ]
+      },
+      {
+        "name": "Group Input.002",
+        "label": "",
+        "type": "GROUP_INPUT",
+        "bl_idname": "NodeGroupInput",
+        "location": [
+          -11.2850341796875,
+          -566.6234130859375
+        ],
+        "width": 140.0,
+        "height": 100.0,
+        "selected": false,
+        "muted": false,
+        "hidden": false,
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "Mesh",
+            "identifier": "Socket_1",
+            "type": "GEOMETRY",
+            "bl_idname": "NodeSocketGeometry",
+            "is_linked": false,
+            "is_multi_input": false
+          },
+          {
+            "name": "直立招牌大小",
+            "identifier": "Socket_2",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 20
+          },
+          {
+            "name": "直立招牌數量",
+            "identifier": "Socket_3",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 1
+          },
+          {
+            "name": "直立招牌_位置",
+            "identifier": "Socket_4",
+            "type": "VECTOR",
+            "bl_idname": "NodeSocketVectorTranslation",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": [
+              -1.1920928955078125e-07,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "name": "直立招牌_變變",
+            "identifier": "Socket_5",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": false,
+            "is_multi_input": false,
+            "default_value": 26
+          },
+          {
+            "name": "橫招牌_1變變",
+            "identifier": "Socket_6",
+            "type": "INT",
+            "bl_idname": "NodeSocketInt",
+            "is_linked": true,
+            "is_multi_input": false,
+            "default_value": 49
+          },
+          {
+            "name": "",
+            "identifier": "__extend__",
+            "type": "CUSTOM",
+            "bl_idname": "NodeSocketVirtual",
+            "is_linked": false,
+            "is_multi_input": false
+          }
+        ]
+      }
+    ],
+    "links": [
+      {
+        "from_node": "Position.001",
+        "from_socket": "Position",
+        "to_node": "Separate XYZ",
+        "to_socket": "Vector"
+      },
+      {
+        "from_node": "Boolean Math.007",
+        "from_socket": "Boolean",
+        "to_node": "Mesh to Points",
+        "to_socket": "Selection"
+      },
+      {
+        "from_node": "Separate XYZ",
+        "from_socket": "Z",
+        "to_node": "Compare",
+        "to_socket": "B"
+      },
+      {
+        "from_node": "Mesh to Points",
+        "from_socket": "Points",
+        "to_node": "Instance on Points",
+        "to_socket": "Points"
+      },
+      {
+        "from_node": "Group Input",
+        "from_socket": "Mesh",
+        "to_node": "Mesh to Points",
+        "to_socket": "Mesh"
+      },
+      {
+        "from_node": "Join Geometry",
+        "from_socket": "Geometry",
+        "to_node": "Group Output",
+        "to_socket": "Instances"
+      },
+      {
+        "from_node": "Mesh to Points.001",
+        "from_socket": "Points",
+        "to_node": "Viewer",
+        "to_socket": "Geometry"
+      },
+      {
+        "from_node": "Reroute.001",
+        "from_socket": "Output",
+        "to_node": "Join Geometry",
+        "to_socket": "Geometry"
+      },
+      {
+        "from_node": "Reroute",
+        "from_socket": "Output",
+        "to_node": "Join Geometry",
+        "to_socket": "Geometry"
+      },
+      {
+        "from_node": "Group Input",
+        "from_socket": "Mesh",
+        "to_node": "Reroute",
+        "to_socket": "Input"
+      },
+      {
+        "from_node": "Normal.005",
+        "from_socket": "Normal",
+        "to_node": "Separate XYZ.004",
+        "to_socket": "Vector"
+      },
+      {
+        "from_node": "Separate XYZ.004",
+        "from_socket": "Z",
+        "to_node": "Compare.004",
+        "to_socket": "A"
+      },
+      {
+        "from_node": "Compare.004",
+        "from_socket": "Result",
+        "to_node": "Boolean Math.002",
+        "to_socket": "Boolean"
+      },
+      {
+        "from_node": "Compare",
+        "from_socket": "Result",
+        "to_node": "Boolean Math.002",
+        "to_socket": "Boolean"
+      },
+      {
+        "from_node": "Boolean Math.002",
+        "from_socket": "Boolean",
+        "to_node": "Boolean Math.003",
+        "to_socket": "Boolean"
+      },
+      {
+        "from_node": "Position.002",
+        "from_socket": "Position",
+        "to_node": "Separate XYZ.001",
+        "to_socket": "Vector"
+      },
+      {
+        "from_node": "Compare.001",
+        "from_socket": "Result",
+        "to_node": "Boolean Math.003",
+        "to_socket": "Boolean"
+      },
+      {
+        "from_node": "Separate XYZ.001",
+        "from_socket": "Z",
+        "to_node": "Compare.001",
+        "to_socket": "A"
+      },
+      {
+        "from_node": "Boolean Math.003",
+        "from_socket": "Boolean",
+        "to_node": "Boolean Math.004",
+        "to_socket": "Boolean"
+      },
+      {
+        "from_node": "Normal",
+        "from_socket": "Normal",
+        "to_node": "Separate XYZ.002",
+        "to_socket": "Vector"
+      },
+      {
+        "from_node": "Compare.002",
+        "from_socket": "Result",
+        "to_node": "Boolean Math.004",
+        "to_socket": "Boolean"
+      },
+      {
+        "from_node": "Separate XYZ.002",
+        "from_socket": "X",
+        "to_node": "Compare.002",
+        "to_socket": "A"
+      },
+      {
+        "from_node": "Collection Info",
+        "from_socket": "Instances",
+        "to_node": "Transform Geometry",
+        "to_socket": "Geometry"
+      },
+      {
+        "from_node": "Transform Geometry",
+        "from_socket": "Geometry",
+        "to_node": "Instance on Points",
+        "to_socket": "Instance"
+      },
+      {
+        "from_node": "Random Value",
+        "from_socket": "Value",
+        "to_node": "Instance on Points",
+        "to_socket": "Instance Index"
+      },
+      {
+        "from_node": "Mesh to Points.001",
+        "from_socket": "Points",
+        "to_node": "Instance on Points.001",
+        "to_socket": "Points"
+      },
+      {
+        "from_node": "Collection Info.001",
+        "from_socket": "Instances",
+        "to_node": "Transform Geometry.001",
+        "to_socket": "Geometry"
+      },
+      {
+        "from_node": "Transform Geometry.001",
+        "from_socket": "Geometry",
+        "to_node": "Instance on Points.001",
+        "to_socket": "Instance"
+      },
+      {
+        "from_node": "Instance on Points",
+        "from_socket": "Instances",
+        "to_node": "Reroute.001",
+        "to_socket": "Input"
+      },
+      {
+        "from_node": "Instance on Points.001",
+        "from_socket": "Instances",
+        "to_node": "Join Geometry",
+        "to_socket": "Geometry"
+      },
+      {
+        "from_node": "Normal.001",
+        "from_socket": "Normal",
+        "to_node": "Separate XYZ.003",
+        "to_socket": "Vector"
+      },
+      {
+        "from_node": "Separate XYZ.003",
+        "from_socket": "X",
+        "to_node": "Compare.003",
+        "to_socket": "A"
+      },
+      {
+        "from_node": "Normal.001",
+        "from_socket": "Normal",
+        "to_node": "Separate XYZ.005",
+        "to_socket": "Vector"
+      },
+      {
+        "from_node": "Separate XYZ.005",
+        "from_socket": "Z",
+        "to_node": "Compare.005",
+        "to_socket": "A"
+      },
+      {
+        "from_node": "Compare.005",
+        "from_socket": "Result",
+        "to_node": "Boolean Math",
+        "to_socket": "Boolean"
+      },
+      {
+        "from_node": "Compare.003",
+        "from_socket": "Result",
+        "to_node": "Boolean Math",
+        "to_socket": "Boolean"
+      },
+      {
+        "from_node": "Random Value.001",
+        "from_socket": "Value",
+        "to_node": "Instance on Points.001",
+        "to_socket": "Instance Index"
+      },
+      {
+        "from_node": "Boolean Math.005",
+        "from_socket": "Boolean",
+        "to_node": "Mesh to Points.001",
+        "to_socket": "Selection"
+      },
+      {
+        "from_node": "Edge Vertices",
+        "from_socket": "Position 1",
+        "to_node": "Vector Math",
+        "to_socket": "Vector"
+      },
+      {
+        "from_node": "Edge Vertices",
+        "from_socket": "Position 2",
+        "to_node": "Vector Math",
+        "to_socket": "Vector"
+      },
+      {
+        "from_node": "Vector Math",
+        "from_socket": "Vector",
+        "to_node": "Separate XYZ.006",
+        "to_socket": "Vector"
+      },
+      {
+        "from_node": "Separate XYZ.006",
+        "from_socket": "Z",
+        "to_node": "Math",
+        "to_socket": "Value"
+      },
+      {
+        "from_node": "Math",
+        "from_socket": "Value",
+        "to_node": "Compare.006",
+        "to_socket": "A"
+      },
+      {
+        "from_node": "Compare.006",
+        "from_socket": "Result",
+        "to_node": "Boolean Math.001",
+        "to_socket": "Boolean"
+      },
+      {
+        "from_node": "Boolean Math.006",
+        "from_socket": "Boolean",
+        "to_node": "Boolean Math.001",
+        "to_socket": "Boolean"
+      },
+      {
+        "from_node": "Position.003",
+        "from_socket": "Position",
+        "to_node": "Separate XYZ.007",
+        "to_socket": "Vector"
+      },
+      {
+        "from_node": "Math.001",
+        "from_socket": "Value",
+        "to_node": "Math.002",
+        "to_socket": "Value"
+      },
+      {
+        "from_node": "Combine XYZ.003",
+        "from_socket": "Vector",
+        "to_node": "Set Position",
+        "to_socket": "Offset"
+      },
+      {
+        "from_node": "Math.002",
+        "from_socket": "Value",
+        "to_node": "Combine XYZ.003",
+        "to_socket": "Y"
+      },
+      {
+        "from_node": "Separate XYZ.007",
+        "from_socket": "Y",
+        "to_node": "Math.001",
+        "to_socket": "Value"
+      },
+      {
+        "from_node": "Math.003",
+        "from_socket": "Value",
+        "to_node": "Math.004",
+        "to_socket": "Value"
+      },
+      {
+        "from_node": "Separate XYZ.007",
+        "from_socket": "X",
+        "to_node": "Math.003",
+        "to_socket": "Value"
+      },
+      {
+        "from_node": "Math.004",
+        "from_socket": "Value",
+        "to_node": "Combine XYZ.003",
+        "to_socket": "X"
+      },
+      {
+        "from_node": "Group Input",
+        "from_socket": "Mesh",
+        "to_node": "Set Position",
+        "to_socket": "Geometry"
+      },
+      {
+        "from_node": "Merge by Distance",
+        "from_socket": "Geometry",
+        "to_node": "Mesh to Points.001",
+        "to_socket": "Mesh"
+      },
+      {
+        "from_node": "Boolean Math.008",
+        "from_socket": "Boolean",
+        "to_node": "Boolean Math.005",
+        "to_socket": "Boolean"
+      },
+      {
+        "from_node": "Random Value.003",
+        "from_socket": "Value",
+        "to_node": "Boolean Math.005",
+        "to_socket": "Boolean"
+      },
+      {
+        "from_node": "Group Input",
+        "from_socket": "直立招牌數量",
+        "to_node": "Random Value.003",
+        "to_socket": "Seed"
+      },
+      {
+        "from_node": "Separate XYZ.008",
+        "from_socket": "Z",
+        "to_node": "Compare.007",
+        "to_socket": "A"
+      },
+      {
+        "from_node": "Boolean Math",
+        "from_socket": "Boolean",
+        "to_node": "Boolean Math.006",
+        "to_socket": "Boolean"
+      },
+      {
+        "from_node": "Position",
+        "from_socket": "Position",
+        "to_node": "Vector Math.001",
+        "to_socket": "Vector"
+      },
+      {
+        "from_node": "Vector Math.001",
+        "from_socket": "Vector",
+        "to_node": "Set Position",
+        "to_socket": "Position"
+      },
+      {
+        "from_node": "Set Position",
+        "from_socket": "Geometry",
+        "to_node": "Merge by Distance",
+        "to_socket": "Geometry"
+      },
+      {
+        "from_node": "Boolean Math.003",
+        "from_socket": "Boolean",
+        "to_node": "Viewer",
+        "to_socket": "Value"
+      },
+      {
+        "from_node": "Position.004",
+        "from_socket": "Position",
+        "to_node": "Separate XYZ.008",
+        "to_socket": "Vector"
+      },
+      {
+        "from_node": "Compare.007",
+        "from_socket": "Result",
+        "to_node": "Boolean Math.006",
+        "to_socket": "Boolean"
+      },
+      {
+        "from_node": "Boolean Math.004",
+        "from_socket": "Boolean",
+        "to_node": "Boolean Math.007",
+        "to_socket": "Boolean"
+      },
+      {
+        "from_node": "Position.005",
+        "from_socket": "Position",
+        "to_node": "Separate XYZ.009",
+        "to_socket": "Vector"
+      },
+      {
+        "from_node": "Compare.008",
+        "from_socket": "Result",
+        "to_node": "Boolean Math.007",
+        "to_socket": "Boolean"
+      },
+      {
+        "from_node": "Separate XYZ.009",
+        "from_socket": "Z",
+        "to_node": "Compare.008",
+        "to_socket": "A"
+      },
+      {
+        "from_node": "Group Input.001",
+        "from_socket": "直立招牌_位置",
+        "to_node": "Transform Geometry.001",
+        "to_socket": "Translation"
+      },
+      {
+        "from_node": "Boolean Math.001",
+        "from_socket": "Boolean",
+        "to_node": "Boolean Math.008",
+        "to_socket": "Boolean"
+      },
+      {
+        "from_node": "Position.006",
+        "from_socket": "Position",
+        "to_node": "Separate XYZ.010",
+        "to_socket": "Vector"
+      },
+      {
+        "from_node": "Separate XYZ.010",
+        "from_socket": "X",
+        "to_node": "Compare.009",
+        "to_socket": "A"
+      },
+      {
+        "from_node": "Compare.009",
+        "from_socket": "Result",
+        "to_node": "Boolean Math.008",
+        "to_socket": "Boolean"
+      },
+      {
+        "from_node": "Group Input.001",
+        "from_socket": "直立招牌_變變",
+        "to_node": "Random Value.001",
+        "to_socket": "Seed"
+      },
+      {
+        "from_node": "Group Input.002",
+        "from_socket": "橫招牌_1變變",
+        "to_node": "Random Value",
+        "to_socket": "Seed"
+      }
+    ]
+  },
+  "root_tree_name": "Taiwnese old building",
+  "group_file": "Building__Generator_Taiwanese_old_building_Taiwnese_old_building__group_05_招牌.json"
+}
