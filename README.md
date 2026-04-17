@@ -449,24 +449,48 @@ This export format is suitable for prompts such as:
 
 ## `geometry_nodes_ai_build` Format
 
-The following describes the JSON structure for the build format, which is used by the importer.
+The following describes the current importer format used by Blender to create Geometry Nodes from AI-generated JSON.
 
-### Top-level fields
+The current addon supports:
 
-The importer currently supports these top-level fields:
+- richer node properties
+- recursive group import
+- group interface reconstruction from JSON
+- `group_file` and `group_data`
+- socket targeting by `name`, `identifier`, or `index`
+- import control flags such as `append_mode`, `place_offset`, and `strict_mode`
+
+---
+
+## Build Format Version
+
+- `format` must be exactly: `geometry_nodes_ai_build`
+- current supported `format_version`: up to `3`
+- recommended value for new AI output: `3`
+
+---
+
+## Top-Level Fields
+
+### Required
 
 - `format`
-  - must be exactly: `geometry_nodes_ai_build`
+- `nodes`
+
+### Recommended
+
+- `format_version`
+- `links`
+- `metadata`
+
+### Supported top-level fields
+
+- `format`
+  - must be `geometry_nodes_ai_build`
 
 - `format_version`
   - optional
-  - recommended value: `1`
-
-- `clear_existing_nodes`
-  - optional
-  - boolean
-  - if `true`, existing nodes in the target tree are cleared before import
-  - if omitted, Blender uses the UI option `導入前清空節點`
+  - recommended: `2`
 
 - `nodes`
   - required
@@ -476,87 +500,399 @@ The importer currently supports these top-level fields:
   - optional
   - array of links between nodes
 
-### Node Definition
+- `interface`
+  - optional
+  - describes tree input/output interface sockets
+  - recommended for any JSON that contains `NodeGroupInput`, `NodeGroupOutput`, or `GeometryNodeGroup`
+
+- `clear_existing_nodes`
+  - optional
+  - boolean
+  - if `true`, clear target tree before import
+  - if omitted, Blender uses the UI option
+
+- `append_mode`
+  - optional
+  - boolean
+  - if `true`, importer will not clear existing nodes even if `clear_existing_nodes` is true
+
+- `place_offset`
+  - optional
+  - array: `[x, y]`
+  - offsets all imported node locations
+
+- `strict_mode`
+  - optional
+  - boolean
+  - if `true`, importer throws error on invalid group/socket/link
+  - if `false`, importer records warnings and continues when possible
+
+- `metadata`
+  - optional
+  - object for descriptive/import validation information
+
+- `generator`
+  - optional
+  - text description of the system that generated the JSON
+
+- `description`
+  - optional
+  - human-readable summary of what the graph is supposed to do
+
+- `group_interface`
+  - optional compatibility alias for `interface`
+
+---
+
+## `metadata` Object
+
+Supported metadata fields:
+
+- `generator`
+- `description`
+- `target_blender_version`
+
+Example:
+
+```json
+"metadata": {
+  "generator": "AI test generator",
+  "description": "Create a simple subdivide setup",
+  "target_blender_version": [4, 5, 0]
+}
+```
+
+Notes:
+
+- if `target_blender_version` is higher than the current Blender version, import will fail
+- top-level `generator` and `description` are also accepted for compatibility
+
+---
+
+## Tree `interface` Definition
+
+The importer now supports explicit tree interface reconstruction.
+
+This is important for:
+
+- `NodeGroupInput`
+- `NodeGroupOutput`
+- `GeometryNodeGroup`
+- nested group trees imported through `group_file` or `group_data`
+
+Without a matching interface, a group node may exist but still not expose the correct sockets for links.
+
+### Recommended shape
+
+```json
+"interface": {
+  "inputs": [
+    {
+      "name": "Geometry",
+      "socket_type": "NodeSocketGeometry"
+    },
+    {
+      "name": "Density",
+      "socket_type": "NodeSocketFloat",
+      "default_value": 1.0,
+      "min_value": 0.0,
+      "max_value": 100.0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "Geometry",
+      "socket_type": "NodeSocketGeometry"
+    }
+  ]
+}
+```
+
+### Supported item fields
+
+Each interface item may use:
+
+- `name`
+- `in_out` *(only needed for flat list form)*
+- `socket_type`
+- `bl_socket_idname`
+- `socket_idname`
+- `type` *(mapped to a Blender socket type when possible)*
+- `description`
+- `default_value`
+- `min_value`
+- `max_value`
+- `hide_value`
+- `attribute_domain`
+- `default_attribute_name`
+
+### Supported forms
+
+#### Object form with `inputs` / `outputs`
+
+```json
+"interface": {
+  "inputs": [
+    { "name": "Geometry", "socket_type": "NodeSocketGeometry" }
+  ],
+  "outputs": [
+    { "name": "Geometry", "socket_type": "NodeSocketGeometry" }
+  ]
+}
+```
+
+#### Flat list form
+
+```json
+"interface": [
+  { "in_out": "INPUT", "name": "Geometry", "socket_type": "NodeSocketGeometry" },
+  { "in_out": "OUTPUT", "name": "Geometry", "socket_type": "NodeSocketGeometry" }
+]
+```
+
+Notes:
+
+- interface sockets are created before nodes and links are imported
+- this allows `NodeGroupInput` / `NodeGroupOutput` sockets to exist during link reconstruction
+- for stable results, AI should always provide `interface` when building custom groups
+
+---
+
+## Node Definition
 
 Each entry in `nodes` represents one node to create.
 
-#### Supported node fields
+### Common node fields
 
 - `id`
-  - recommended
-  - unique identifier used by `links`
-  - should be unique within the JSON
+  - recommended unique ID used by `links`
 
 - `bl_idname`
-  - required
-  - Blender node type identifier
-  - examples:
-    - `NodeGroupInput`
-    - `NodeGroupOutput`
-    - `GeometryNodeSubdivideMesh`
-    - `ShaderNodeMath`
+  - required Blender node type identifier
 
 - `name`
-  - optional
-  - Blender node name
+  - optional Blender node name
 
 - `label`
-  - optional
-  - node label shown in UI
+  - optional UI label
 
 - `location`
-  - optional
-  - array: `[x, y]`
+  - optional `[x, y]`
 
 - `width`
-  - optional
-  - numeric node width
+  - optional numeric width
 
 - `mute`
-  - optional
-  - boolean
+  - optional boolean
 
 - `hide`
-  - optional
-  - boolean
+  - optional boolean
 
 - `properties`
-  - optional
-  - object of Blender node properties
-  - used for settings such as:
-    - `operation`
-    - `data_type`
-    - `mode`
-    - `input_type`
-  - unsupported properties are ignored
+  - optional object of Blender properties set via `setattr`
+
+- `custom_properties`
+  - optional object of Blender custom properties / ID properties
+
+- `warnings_optional`
+  - optional array of warning strings
+  - importer will record them as warnings for visibility
 
 - `inputs`
   - optional
-  - object where each key is an input socket name and each value is the default value to set
+  - supports both simple and extended forms
 
-### Link Definition
+---
+
+## `inputs` Supported Forms
+
+### Simple form
+
+```json
+"inputs": {
+  "Level": 3,
+  "Selection": true
+}
+```
+
+### Extended object form
+
+```json
+"inputs": {
+  "Level": {
+    "identifier": "Level",
+    "value": 3
+  }
+}
+```
+
+### Array form
+
+```json
+"inputs": [
+  {
+    "name": "Level",
+    "value": 3
+  },
+  {
+    "identifier": "Selection",
+    "value": true
+  },
+  {
+    "index": 0,
+    "value": 1.0
+  }
+]
+```
+
+Each input reference can use:
+
+- `name`
+- `identifier`
+- `index`
+
+Value fields supported:
+
+- `value`
+- `default_value`
+
+Recommended priority for AI:
+
+1. use `identifier` if known
+2. otherwise use `name`
+3. use `index` only if name/identifier are unstable or unavailable
+
+---
+
+## Group Node Support
+
+If a node is a group node such as `GeometryNodeGroup`, it may reference a child group tree.
+
+Supported group fields on a node:
+
+- `group_name`
+- `group_file`
+- `group_data`
+
+### `group_name`
+
+Use an existing Blender `GeometryNodeTree` by name if available.
+
+### `group_file`
+
+Load a child JSON file relative to the current JSON file.
+
+Example:
+
+```json
+{
+  "id": "surface_group",
+  "bl_idname": "GeometryNodeGroup",
+  "group_name": "SurfaceScatter",
+  "group_file": "groups/surface_scatter.json"
+}
+```
+
+### `group_data`
+
+Embed a child build JSON directly inside the node.
+
+Example:
+
+```json
+{
+  "id": "inner_group",
+  "bl_idname": "GeometryNodeGroup",
+  "group_name": "InlineScatter",
+  "group_data": {
+    "format": "geometry_nodes_ai_build",
+    "format_version": 2,
+    "nodes": [
+      {
+        "id": "input",
+        "bl_idname": "NodeGroupInput",
+        "location": [-250, 0]
+      },
+      {
+        "id": "output",
+        "bl_idname": "NodeGroupOutput",
+        "location": [250, 0]
+      }
+    ],
+    "links": []
+  }
+}
+```
+
+Notes:
+
+- `group_data` may also use simplified form without explicitly repeating `format`
+- importer supports recursive nested groups
+- importer caches repeated group references during one import session
+- importer blocks circular group references
+
+---
+
+## Link Definition
 
 Each entry in `links` describes one connection.
 
-#### Supported link fields
+### Required link fields
 
 - `from_node`
-  - required
-  - the source node `id`
-
-- `from_socket`
-  - required
-  - output socket name on the source node
-
 - `to_node`
-  - required
-  - target node `id`
 
-- `to_socket`
-  - required
-  - input socket name on the target node
+### Socket reference fields
 
-If a node ID or socket name cannot be found, that link is skipped.
+Each side may use either a direct socket reference object or compatibility fields.
+
+#### Direct form
+
+```json
+{
+  "from_node": "input",
+  "from_socket": {
+    "identifier": "Geometry"
+  },
+  "to_node": "subdivide",
+  "to_socket": {
+    "name": "Mesh"
+  }
+}
+```
+
+#### Compatibility form
+
+```json
+{
+  "from_node": "input",
+  "from_socket_name": "Geometry",
+  "to_node": "subdivide",
+  "to_socket_name": "Mesh"
+}
+```
+
+#### Old simple form
+
+```json
+{
+  "from_node": "input",
+  "from_socket": "Geometry",
+  "to_node": "subdivide",
+  "to_socket": "Mesh"
+}
+```
+
+Supported socket targeting keys:
+
+- `name`
+- `identifier`
+- `index`
+
+If a node or socket cannot be found:
+
+- in normal mode: importer records a warning and skips that link
+- in `strict_mode`: importer raises an error
 
 ---
 
@@ -565,8 +901,13 @@ If a node ID or socket name cannot be found, that link is skipped.
 ```json
 {
   "format": "geometry_nodes_ai_build",
-  "format_version": 1,
+  "format_version": 3,
   "clear_existing_nodes": true,
+  "metadata": {
+    "generator": "AI test generator",
+    "description": "Simple subdivide mesh graph",
+    "target_blender_version": [4, 5, 0]
+  },
   "nodes": [
     {
       "id": "input",
@@ -576,7 +917,7 @@ If a node ID or socket name cannot be found, that link is skipped.
     {
       "id": "subdivide",
       "bl_idname": "GeometryNodeSubdivideMesh",
-      "location": [-100, 0],
+      "location": [-80, 0],
       "inputs": {
         "Level": 3
       }
@@ -584,7 +925,7 @@ If a node ID or socket name cannot be found, that link is skipped.
     {
       "id": "output",
       "bl_idname": "NodeGroupOutput",
-      "location": [250, 0]
+      "location": [240, 0]
     }
   ],
   "links": [
@@ -606,15 +947,14 @@ If a node ID or socket name cannot be found, that link is skipped.
 
 ---
 
-## Example with Node Properties
-
-This example shows how AI can set node properties in addition to default input values.
+## Example with Properties and Stable Socket References
 
 ```json
 {
   "format": "geometry_nodes_ai_build",
-  "format_version": 1,
+  "format_version": 3,
   "clear_existing_nodes": true,
+  "strict_mode": false,
   "nodes": [
     {
       "id": "math_1",
@@ -625,60 +965,152 @@ This example shows how AI can set node properties in addition to default input v
       "properties": {
         "operation": "MULTIPLY"
       },
-      "inputs": {
-        "Value": 2.0,
-        "Value_001": 3.0
-      }
+      "custom_properties": {
+        "ai_tag": "generated"
+      },
+      "inputs": [
+        {
+          "identifier": "Value",
+          "value": 2.0
+        },
+        {
+          "index": 1,
+          "value": 3.0
+        }
+      ]
     }
   ],
   "links": []
 }
 ```
 
-> Note: whether an input socket name is `Value`, `Value_001`, or something else depends on the Blender node type.
-> AI should use the actual socket names Blender expects.
+---
+
+## Example with External Recursive Group
+
+Main JSON:
+
+```json
+{
+  "format": "geometry_nodes_ai_build",
+  "format_version": 3,
+  "clear_existing_nodes": true,
+  "interface": {
+    "inputs": [
+      {
+        "name": "Geometry",
+        "socket_type": "NodeSocketGeometry"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Geometry",
+        "socket_type": "NodeSocketGeometry"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "group_input",
+      "bl_idname": "NodeGroupInput",
+      "location": [-500, 0]
+    },
+    {
+      "id": "scatter_group",
+      "bl_idname": "GeometryNodeGroup",
+      "group_name": "SurfaceScatter",
+      "group_file": "surface_scatter.json",
+      "location": [-100, 0]
+    },
+    {
+      "id": "group_output",
+      "bl_idname": "NodeGroupOutput",
+      "location": [300, 0]
+    }
+  ],
+  "links": [
+    {
+      "from_node": "group_input",
+      "from_socket": "Geometry",
+      "to_node": "scatter_group",
+      "to_socket": "Geometry"
+    },
+    {
+      "from_node": "scatter_group",
+      "from_socket": "Geometry",
+      "to_node": "group_output",
+      "to_socket": "Geometry"
+    }
+  ]
+}
+```
+
+Child `surface_scatter.json`:
+
+```json
+{
+  "format": "geometry_nodes_ai_build",
+  "format_version": 3,
+  "interface": {
+    "inputs": [
+      {
+        "name": "Geometry",
+        "socket_type": "NodeSocketGeometry"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Geometry",
+        "socket_type": "NodeSocketGeometry"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "input",
+      "bl_idname": "NodeGroupInput",
+      "location": [-250, 0]
+    },
+    {
+      "id": "output",
+      "bl_idname": "NodeGroupOutput",
+      "location": [250, 0]
+    }
+  ],
+  "links": [
+    {
+      "from_node": "input",
+      "from_socket": "Geometry",
+      "to_node": "output",
+      "to_socket": "Geometry"
+    }
+  ]
+}
+```
 
 ---
 
 ## Rules for AI When Generating Import JSON
 
-When asking AI to generate importable JSON, use these rules:
+Use these rules for reliable generation:
 
-1. Always set:
-   - `format: "geometry_nodes_ai_build"`
-
-2. Always provide:
-   - `nodes`
-
-3. Prefer giving every node a unique:
-   - `id`
-
-4. For every node, provide the correct Blender:
-   - `bl_idname`
-
-5. Use socket **names**, not indices, in:
-   - `inputs`
-   - `links.from_socket`
-   - `links.to_socket`
-
-6. Only use `properties` for real Blender node properties.
-
-7. Keep the first test simple:
-   - `NodeGroupInput`
-   - one geometry processing node
-   - `NodeGroupOutput`
-
-8. If unsure about a node property, omit it.
-
-9. If unsure about a socket default value, omit it.
-
-10. Use simple graphs first before attempting complex multi-branch setups.
+1. Always set `format` to `geometry_nodes_ai_build`
+2. Prefer `format_version: 3`
+3. Give every node a unique `id`
+4. Every node must have the correct Blender `bl_idname`
+5. Prefer socket `identifier` over `name` when known
+6. Use `index` only as fallback
+7. Only put real Blender attributes in `properties`
+8. Use `custom_properties` only for custom metadata tags
+9. When a graph uses `NodeGroupInput`, `NodeGroupOutput`, or `GeometryNodeGroup`, provide `interface`
+10. For group nodes, prefer `group_file` for larger modular structures
+11. For small self-contained tests, use `group_data`
+12. If uncertain about a property or socket, omit it
+13. Keep early tests structurally simple
 
 ---
 
 ## Recommended Prompt for AI
-
-You can ask AI like this:
 
 ```text
 請幫我輸出一份 Blender Geometry Nodes 可匯入的 JSON，格式必須是 geometry_nodes_ai_build。
@@ -686,62 +1118,78 @@ You can ask AI like this:
 要求：
 1. 只能輸出合法 JSON
 2. format 必須是 geometry_nodes_ai_build
-3. 每個 node 都要有 id 與 bl_idname
-4. links 要使用 node id 與 socket 名稱
-5. 若不確定 Blender 屬性名稱，就不要輸出 properties
-6. 請先生成最小可運作版本
+3. format_version 請使用 3
+4. 每個 node 都要有 id 與 bl_idname
+5. links 要使用 node id
+6. socket 若知道 identifier 就優先用 identifier，否則用 name
+7. 若有 Group Input、Group Output、或 Group Node，請一併輸出 interface
+8. 若是 Group Node，可使用 group_file 或 group_data
+9. 若不確定 Blender 屬性名稱，就不要輸出 properties
+10. 請先生成最小可運作版本
+11. 不要輸出解說文字，只輸出 JSON
 ```
 
 ---
 
-## Recommended First Test Cases
-
-For project testing, start with these simple structures:
+## Recommended AI Test Cases
 
 ### Test 1: Group Input → Subdivide Mesh → Group Output
 Goal:
 - verify node creation
-- verify socket default value assignment
-- verify link creation
+- verify input default values
+- verify basic link creation
 
-### Test 2: Group Input → Set Position → Group Output
+### Test 2: Node with `properties` and `custom_properties`
 Goal:
-- verify another Geometry Nodes type
-- verify different socket names
+- verify property assignment
+- verify custom property assignment
 
-### Test 3: Math node only
+### Test 3: Socket targeting with `identifier`
 Goal:
-- verify generic property assignment such as `operation`
+- verify more stable socket matching
+
+### Test 4: Main graph with one `group_file`
+Goal:
+- verify external child group creation
+- verify group node points to imported node tree
+- verify group interface sockets appear correctly on the parent group node
+
+### Test 5: Nested `group_file` inside another group
+Goal:
+- verify recursive group import
+- verify cycle protection does not falsely trigger
+
+### Test 6: Custom group interface with float + geometry sockets
+Goal:
+- verify explicit interface reconstruction
+- verify `NodeGroupInput` / `NodeGroupOutput` links work after import
 
 ---
 
 ## Current Importer Limitations
 
-The current importer is intentionally minimal.
-
-### Supported now
+Supported now:
 
 - create nodes by `bl_idname`
 - set basic node fields
-- set some node properties through `properties`
-- set some input default values through `inputs`
-- create links by socket names
-- optionally clear existing nodes before import
+- set `properties`
+- set `custom_properties`
+- set input values using `name`, `identifier`, or `index`
+- create links using `name`, `identifier`, or `index`
+- reconstruct tree interface from JSON `interface`
+- recursively import nested group JSON
+- load `group_file` relative to the current JSON file
+- load inline `group_data`
+- detect circular group references
+- reuse repeated group references during a single import session
 
-### Not fully supported yet
+Not fully supported yet:
 
-- automatic import of nested group JSON files
-- automatic creation of custom group interfaces
 - complete reconstruction from exported analysis JSON
-- advanced Blender-only internal node state
-- all possible node-specific special settings
-- full validation of socket/property compatibility
-
-Because of this, the best testing approach is:
-
-- start with small graphs
-- validate socket names carefully
-- gradually expand complexity
+- all Blender internal special node states
+- advanced interface features such as panels or every possible socket-specific UI behavior
+- full validation of every node/property/socket combination
+- advanced merge behavior for imported groups beyond current append/clear controls
 
 ---
 
