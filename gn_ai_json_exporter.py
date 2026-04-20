@@ -82,6 +82,7 @@ SUPPORTED_BUILD_FORMAT_VERSION = 3
 
 
 INTERFACE_SOCKET_TYPE_MAP = {
+    "VALUE": "NodeSocketFloat",
     "FLOAT": "NodeSocketFloat",
     "INT": "NodeSocketInt",
     "BOOLEAN": "NodeSocketBool",
@@ -97,6 +98,25 @@ INTERFACE_SOCKET_TYPE_MAP = {
     "TEXTURE": "NodeSocketTexture",
     "IMAGE": "NodeSocketImage",
     "MATERIAL": "NodeSocketMaterial",
+}
+
+
+SUPPORTED_INTERFACE_SOCKET_TYPES = {
+    "NodeSocketFloat",
+    "NodeSocketInt",
+    "NodeSocketBool",
+    "NodeSocketRotation",
+    "NodeSocketMatrix",
+    "NodeSocketVector",
+    "NodeSocketColor",
+    "NodeSocketString",
+    "NodeSocketMenu",
+    "NodeSocketObject",
+    "NodeSocketGeometry",
+    "NodeSocketCollection",
+    "NodeSocketTexture",
+    "NodeSocketImage",
+    "NodeSocketMaterial",
 }
 
 
@@ -736,6 +756,13 @@ def _serialize_node(node, group_file_map=None):
         "outputs": [_serialize_socket(socket) for socket in node.outputs],
     }
 
+    parent_node = getattr(node, "parent", None)
+    if parent_node is not None:
+        try:
+            data["parent"] = parent_node.name
+        except Exception:
+            pass
+
     group_tree = getattr(node, "node_tree", None)
     if group_tree is not None:
         referenced_data = {
@@ -888,6 +915,284 @@ def _resolve_json_path(base_filepath, relative_filepath):
     return os.path.normpath(os.path.join(os.path.dirname(base_filepath), relative_filepath))
 
 
+def _get_export_socket_interface_type(socket_data):
+    # 將 export socket 資訊映射成 build interface 可用的 socket_type
+    if not isinstance(socket_data, dict):
+        return "NodeSocketFloat"
+
+    if _is_virtual_socket_data(socket_data):
+        return None
+
+    bl_socket_idname = socket_data.get("bl_idname")
+    if isinstance(bl_socket_idname, str) and bl_socket_idname in SUPPORTED_INTERFACE_SOCKET_TYPES:
+        return bl_socket_idname
+
+    socket_type = str(socket_data.get("type", "")).upper()
+    return INTERFACE_SOCKET_TYPE_MAP.get(socket_type, "NodeSocketFloat")
+
+
+def _is_virtual_socket_data(socket_data):
+    # Blender 的 __extend__ / NodeSocketVirtual 只是 UI 延伸 socket，不應參與 reverse import
+    if not isinstance(socket_data, dict):
+        return False
+
+    if socket_data.get("identifier") == "__extend__":
+        return True
+
+    if socket_data.get("bl_idname") == "NodeSocketVirtual":
+        return True
+
+    if str(socket_data.get("type", "")).upper() == "CUSTOM":
+        return True
+
+    return False
+
+
+def _export_socket_to_interface_item(socket_data, in_out):
+    # 將 export socket 轉成 build interface item
+    if not isinstance(socket_data, dict):
+        return None
+
+    if _is_virtual_socket_data(socket_data):
+        return None
+
+    socket_type = _get_export_socket_interface_type(socket_data)
+    if not socket_type:
+        return None
+
+    item = {
+        "name": socket_data.get("name") or "Socket",
+        "in_out": in_out,
+        "socket_type": socket_type,
+    }
+
+    if socket_data.get("identifier"):
+        item["identifier"] = socket_data["identifier"]
+
+    if in_out == "INPUT" and "default_value" in socket_data:
+        item["default_value"] = socket_data["default_value"]
+
+    return item
+
+
+def _find_first_export_node_by_type(tree_data, bl_idname):
+    # 從 export tree 中找第一個指定類型節點
+    if not isinstance(tree_data, dict):
+        return None
+
+    for node_data in tree_data.get("nodes", []):
+        if isinstance(node_data, dict) and node_data.get("bl_idname") == bl_idname:
+            return node_data
+
+    return None
+
+
+def _infer_interface_from_export_tree(tree_data):
+    # 從 export JSON 反推 group/tree interface
+    if not isinstance(tree_data, dict):
+        return None
+
+    group_input_node = _find_first_export_node_by_type(tree_data, "NodeGroupInput")
+    group_output_node = _find_first_export_node_by_type(tree_data, "NodeGroupOutput")
+
+    interface_inputs = []
+    interface_outputs = []
+
+    if isinstance(group_input_node, dict):
+        for socket_data in group_input_node.get("outputs", []) or []:
+            item = _export_socket_to_interface_item(socket_data, "INPUT")
+            if item is not None:
+                interface_inputs.append(item)
+
+    if isinstance(group_output_node, dict):
+        for socket_data in group_output_node.get("inputs", []) or []:
+            item = _export_socket_to_interface_item(socket_data, "OUTPUT")
+            if item is not None:
+                interface_outputs.append(item)
+
+    if not interface_inputs and not interface_outputs:
+        return None
+
+    return {
+        "inputs": interface_inputs,
+        "outputs": interface_outputs,
+    }
+
+
+def _export_input_socket_to_build_input(socket_data, socket_index=None):
+    # 將 export node.inputs[] 的 default_value 轉成 build node.inputs[]
+    if not isinstance(socket_data, dict):
+        return None
+
+    if _is_virtual_socket_data(socket_data):
+        return None
+
+    if "default_value" not in socket_data:
+        return None
+
+    if socket_data.get("is_linked"):
+        return None
+
+    input_item = {
+        "value": socket_data.get("default_value"),
+    }
+
+    if socket_data.get("identifier"):
+        input_item["identifier"] = socket_data["identifier"]
+
+    if socket_data.get("name"):
+        input_item["name"] = socket_data["name"]
+
+    if socket_index is not None:
+        input_item["index"] = socket_index
+
+    if not any(key in input_item for key in ("identifier", "name", "index")):
+        return None
+
+    return input_item
+
+
+def _convert_export_node_to_build_node(node_data):
+    # 將單一 export node 轉成 build node
+    if not isinstance(node_data, dict):
+        return None
+
+    bl_idname = node_data.get("bl_idname")
+    if not bl_idname:
+        return None
+
+    build_node = {
+        "id": node_data.get("name") or bl_idname,
+        "bl_idname": bl_idname,
+    }
+
+    if "name" in node_data:
+        build_node["name"] = node_data.get("name")
+
+    if "label" in node_data:
+        build_node["label"] = node_data.get("label")
+
+    if "location" in node_data:
+        build_node["location"] = node_data.get("location")
+
+    if "width" in node_data:
+        build_node["width"] = node_data.get("width")
+
+    if "muted" in node_data:
+        build_node["mute"] = bool(node_data.get("muted"))
+
+    if "hidden" in node_data:
+        build_node["hide"] = bool(node_data.get("hidden"))
+
+    if node_data.get("parent"):
+        build_node["parent"] = node_data.get("parent")
+
+    inputs_data = []
+    for socket_index, socket_data in enumerate(node_data.get("inputs", []) or []):
+        input_item = _export_input_socket_to_build_input(socket_data, socket_index=socket_index)
+        if input_item is not None:
+            inputs_data.append(input_item)
+
+    if inputs_data:
+        build_node["inputs"] = inputs_data
+
+    referenced_tree = node_data.get("referenced_node_tree")
+    if isinstance(referenced_tree, dict):
+        if referenced_tree.get("name"):
+            build_node["group_name"] = referenced_tree["name"]
+
+        if referenced_tree.get("export_file"):
+            build_node["group_file"] = referenced_tree["export_file"]
+
+    return build_node
+
+
+def _convert_export_link_to_build_link(link_data):
+    # 將 export link 轉成 build link
+    if not isinstance(link_data, dict):
+        return None
+
+    from_node = link_data.get("from_node")
+    to_node = link_data.get("to_node")
+    from_socket = link_data.get("from_socket")
+    to_socket = link_data.get("to_socket")
+
+    if not from_node or not to_node:
+        return None
+
+    return {
+        "from_node": from_node,
+        "from_socket": {"name": from_socket} if from_socket else {},
+        "to_node": to_node,
+        "to_socket": {"name": to_socket} if to_socket else {},
+    }
+
+
+def _normalize_export_json_data(data, group_name=None):
+    # 將 geometry_nodes_ai_json 轉成 geometry_nodes_ai_build，供既有 importer 重用
+    if not isinstance(data, dict):
+        raise ValueError("export JSON 資料格式必須是 object")
+
+    if data.get("format") != "geometry_nodes_ai_json":
+        raise ValueError("JSON format 必須是 geometry_nodes_ai_json")
+
+    tree_data = data.get("tree")
+    if not isinstance(tree_data, dict):
+        raise ValueError("export JSON 缺少 tree 物件")
+
+    build_data = {
+        "format": "geometry_nodes_ai_build",
+        "format_version": SUPPORTED_BUILD_FORMAT_VERSION,
+        "nodes": [],
+        "links": [],
+        "metadata": {
+            "generator": data.get("generator") or "GN AI JSON Exporter",
+            "description": "Reverse-imported from geometry_nodes_ai_json",
+        },
+    }
+
+    interface_data = _infer_interface_from_export_tree(tree_data)
+    if interface_data:
+        build_data["interface"] = interface_data
+
+    selection_mode = tree_data.get("selection_mode")
+    if selection_mode == "selected_nodes":
+        build_data["description"] = "Reverse-imported from partial export (selected_nodes)"
+
+    for node_data in tree_data.get("nodes", []) or []:
+        build_node = _convert_export_node_to_build_node(node_data)
+        if build_node is not None:
+            build_data["nodes"].append(build_node)
+
+    for link_data in tree_data.get("links", []) or []:
+        build_link = _convert_export_link_to_build_link(link_data)
+        if build_link is not None:
+            build_data["links"].append(build_link)
+
+    resolved_group_name = (
+        group_name
+        or data.get("group_name")
+        or tree_data.get("name")
+    )
+    if resolved_group_name:
+        build_data["group_name"] = resolved_group_name
+
+    return build_data
+
+
+def _normalize_import_json_data(data, group_name=None):
+    # 同時支援 geometry_nodes_ai_build 與 geometry_nodes_ai_json
+    if not isinstance(data, dict):
+        raise ValueError("JSON 資料格式必須是 object")
+
+    format_name = data.get("format")
+
+    if format_name == "geometry_nodes_ai_json":
+        return _normalize_export_json_data(data, group_name=group_name)
+
+    return _normalize_build_json_data(data, group_name=group_name)
+
+
 def _normalize_build_json_data(data, group_name=None):
     # 將簡化 build JSON 統一成 importer 可處理的完整格式
     if not isinstance(data, dict):
@@ -937,7 +1242,7 @@ def _get_group_reference_key(base_filepath, node_data):
 
     if isinstance(group_data, dict):
         try:
-            normalized_group_data = _normalize_build_json_data(group_data, group_name=group_name)
+            normalized_group_data = _normalize_import_json_data(group_data, group_name=group_name)
             serialized = json.dumps(normalized_group_data, ensure_ascii=False, sort_keys=True)
         except Exception:
             serialized = str(group_data)
@@ -1145,6 +1450,9 @@ def _normalize_interface_item(in_out, item):
     if not isinstance(item, dict):
         return None
 
+    if _is_virtual_socket_data(item):
+        return None
+
     normalized_item = dict(item)
     normalized_item["in_out"] = (item.get("in_out") or in_out or "INPUT").upper()
     normalized_item["socket_type"] = (
@@ -1278,14 +1586,23 @@ def _build_tree_interface(tree, interface_data, strict_mode=False, warnings=None
         _clear_tree_interface(tree)
 
     for item_data in normalized_items:
+        socket_type = item_data.get("socket_type")
+        if socket_type not in SUPPORTED_INTERFACE_SOCKET_TYPES:
+            _raise_or_warn(
+                strict_mode,
+                warnings,
+                f"略過不支援的 interface socket 類型: {item_data.get('name')} ({socket_type})",
+            )
+            continue
+
         try:
             interface_item = interface.new_socket(
                 name=item_data["name"],
                 in_out=item_data["in_out"],
-                socket_type=item_data["socket_type"],
+                socket_type=socket_type,
             )
         except Exception as exc:
-            _raise_or_warn(strict_mode, warnings, f"建立 interface socket 失敗: {item_data.get('name')}: {exc}")
+            _raise_or_warn(strict_mode, warnings, f"建立 interface socket 失敗: {item_data.get('name')} ({socket_type})")
             continue
 
         if "identifier" in item_data and hasattr(interface_item, "identifier"):
@@ -1769,7 +2086,7 @@ def _resolve_group_tree_reference(base_filepath, node_data, strict_mode, warning
 
         try:
             _push_group_reference(import_state, reference_key)
-            normalized_group_data = _normalize_build_json_data(group_data, group_name=resolved_group_name)
+            normalized_group_data = _normalize_import_json_data(group_data, group_name=resolved_group_name)
             if import_state is not None and reference_key is not None:
                 import_state.group_cache[reference_key] = group_tree
 
@@ -1810,7 +2127,7 @@ def _resolve_group_tree_reference(base_filepath, node_data, strict_mode, warning
 
         try:
             _push_group_reference(import_state, reference_key)
-            normalized_group_data = _normalize_build_json_data(group_data, group_name=resolved_group_name)
+            normalized_group_data = _normalize_import_json_data(group_data, group_name=resolved_group_name)
             if import_state is not None and reference_key is not None:
                 import_state.group_cache[reference_key] = group_tree
 
@@ -1982,6 +2299,48 @@ def _describe_sockets(sockets):
     return ", ".join(descriptions) if descriptions else "<none>"
 
 
+def _get_duplicate_socket_name_map(sockets):
+    # 收集同名 socket，幫助診斷 link 只靠 name 時的歧義問題
+    name_map = {}
+    for socket in sockets:
+        socket_name = getattr(socket, "name", None)
+        if not socket_name:
+            continue
+        name_map.setdefault(socket_name, []).append(socket)
+
+    return {name: items for name, items in name_map.items() if len(items) > 1}
+
+
+def _build_duplicate_socket_hint(node, socket_reference, is_output):
+    # 若 link 僅靠 name 指向同名 socket，提示可能發生歧義
+    if not isinstance(socket_reference, dict):
+        return None
+
+    socket_name = socket_reference.get("name")
+    socket_identifier = socket_reference.get("identifier")
+    socket_index = socket_reference.get("index")
+
+    if not socket_name or socket_identifier or socket_index is not None:
+        return None
+
+    sockets = node.outputs if is_output else node.inputs
+    duplicate_map = _get_duplicate_socket_name_map(sockets)
+    duplicate_sockets = duplicate_map.get(socket_name)
+    if not duplicate_sockets:
+        return None
+
+    direction = "輸出" if is_output else "輸入"
+    duplicate_desc = ", ".join(
+        f"{index}:{getattr(socket, 'name', '')}[{getattr(socket, 'identifier', '')}]"
+        for index, socket in enumerate(sockets)
+        if getattr(socket, 'name', None) == socket_name
+    )
+    return (
+        f"{direction} socket 名稱重複，僅使用 name 可能產生歧義: "
+        f"node={node.name} ({node.bl_idname}), name={socket_name}, candidates={duplicate_desc}"
+    )
+
+
 def _build_missing_socket_warning(node, socket_reference, is_output):
     # 建立更詳細的 socket 查找失敗警告
     sockets = node.outputs if is_output else node.inputs
@@ -1992,9 +2351,54 @@ def _build_missing_socket_warning(node, socket_reference, is_output):
     )
 
 
+def _apply_node_parent_relations(node_map, node_data_map, strict_mode=False, warnings=None, place_offset=(0.0, 0.0)):
+    # 所有節點建立完成後，再還原 NodeFrame 父子關係
+    unresolved_ids = {
+        node_id
+        for node_id, node_data in node_data_map.items()
+        if isinstance(node_data, dict) and node_data.get("parent")
+    }
+
+    while unresolved_ids:
+        progressed = False
+
+        for node_id in list(unresolved_ids):
+            node = node_map.get(node_id)
+            node_data = node_data_map.get(node_id)
+            parent_name = node_data.get("parent") if isinstance(node_data, dict) else None
+
+            if node is None or not parent_name:
+                unresolved_ids.remove(node_id)
+                continue
+
+            parent_node = node_map.get(parent_name)
+            if parent_node is None:
+                continue
+
+            if getattr(parent_node, "bl_idname", "") != "NodeFrame":
+                _raise_or_warn(strict_mode, warnings, f"節點 parent 不是 NodeFrame: node={node_id}, parent={parent_name}")
+                unresolved_ids.remove(node_id)
+                continue
+
+            try:
+                node.parent = parent_node
+                _apply_basic_node_fields(node, node_data, place_offset=place_offset)
+            except Exception as exc:
+                _raise_or_warn(strict_mode, warnings, f"無法設定節點 parent: node={node_id}, parent={parent_name}: {exc}")
+
+            unresolved_ids.remove(node_id)
+            progressed = True
+
+        if not progressed:
+            for node_id in sorted(unresolved_ids):
+                parent_name = node_data_map.get(node_id, {}).get("parent")
+                _raise_or_warn(strict_mode, warnings, f"找不到 parent frame: node={node_id}, parent={parent_name}")
+            break
+
+
 def _import_tree_from_build_json(tree, data, clear_existing, base_filepath=None, import_state=None):
     # 從 AI build JSON 建立 Geometry Nodes 節點圖
-    data = _normalize_build_json_data(data)
+    data = _normalize_import_json_data(data)
 
     if import_state is None:
         import_state = _create_build_import_state()
@@ -2121,6 +2525,14 @@ def _import_tree_from_build_json(tree, data, clear_existing, base_filepath=None,
             node_map[node_id] = node
             node_data_map[node_id] = node_data
 
+        _apply_node_parent_relations(
+            node_map,
+            node_data_map,
+            strict_mode=strict_mode,
+            warnings=warnings,
+            place_offset=place_offset,
+        )
+
         for link_data in links_data:
             from_node = node_map.get(link_data.get("from_node"))
             to_node = node_map.get(link_data.get("to_node"))
@@ -2131,6 +2543,13 @@ def _import_tree_from_build_json(tree, data, clear_existing, base_filepath=None,
 
             from_socket_reference = _get_link_socket_reference(link_data, "from")
             to_socket_reference = _get_link_socket_reference(link_data, "to")
+
+            from_duplicate_hint = _build_duplicate_socket_hint(from_node, from_socket_reference, True) if from_node is not None else None
+            to_duplicate_hint = _build_duplicate_socket_hint(to_node, to_socket_reference, False) if to_node is not None else None
+            if from_duplicate_hint:
+                _record_warning(warnings, from_duplicate_hint)
+            if to_duplicate_hint:
+                _record_warning(warnings, to_duplicate_hint)
 
             from_socket = _find_socket_with_dynamic_support(
                 from_node,
