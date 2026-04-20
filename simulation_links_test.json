@@ -1,0 +1,64 @@
+{
+  "format": "geometry_nodes_ai_build",
+  "format_version": 3,
+  "clear_existing_nodes": true,
+  "strict_mode": false,
+  "nodes": [
+    {
+      "id": "group_input",
+      "name": "Group Input",
+      "bl_idname": "NodeGroupInput",
+      "location": [-700, 40]
+    },
+    {
+      "id": "sim_input",
+      "name": "Sim Input A",
+      "bl_idname": "GeometryNodeSimulationInput",
+      "location": [-260, 40]
+    },
+    {
+      "id": "math_add",
+      "name": "Add State",
+      "bl_idname": "ShaderNodeMath",
+      "location": [0, 40],
+      "properties": {
+        "operation": "ADD"
+      },
+      "inputs": {
+        "Value_001": 1.0
+      }
+    },
+    {
+      "id": "sim_output",
+      "name": "Sim Output B",
+      "bl_idname": "GeometryNodeSimulationOutput",
+      "location": [250, 40],
+      "state_items": [
+        {
+          "name": "StateValue",
+          "socket_type": "NodeSocketFloat"
+        }
+      ]
+    },
+    {
+      "id": "group_output",
+      "name": "Group Output",
+      "bl_idname": "NodeGroupOutput",
+      "location": [520, 40]
+    }
+  ],
+  "links": [
+    {
+      "from_node": "sim_input",
+      "from_socket": { "name": "StateValue" },
+      "to_node": "math_add",
+      "to_socket": { "name": "Value" }
+    },
+    {
+      "from_node": "math_add",
+      "from_socket": { "name": "Value" },
+      "to_node": "sim_output",
+      "to_socket": { "name": "StateValue" }
+    }
+  ]
+}

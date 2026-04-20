@@ -10,6 +10,35 @@ bl_info = {
 }
 
 
+ZONE_ITEM_SOCKET_TYPE_ALIASES = {
+    "NodeSocketFloat": "FLOAT",
+    "NodeSocketInt": "INT",
+    "NodeSocketBool": "BOOLEAN",
+    "NodeSocketVector": "VECTOR",
+    "NodeSocketRotation": "ROTATION",
+    "NodeSocketMatrix": "MATRIX",
+    "NodeSocketString": "STRING",
+    "NodeSocketColor": "RGBA",
+    "NodeSocketGeometry": "GEOMETRY",
+    "NodeSocketObject": "OBJECT",
+    "NodeSocketCollection": "COLLECTION",
+    "NodeSocketTexture": "TEXTURE",
+    "NodeSocketImage": "IMAGE",
+    "NodeSocketMaterial": "MATERIAL",
+}
+
+
+PARTIALLY_SUPPORTED_WARNING_GROUPS = {
+    "GeometryNodeSimulationInput": "simulation_zone",
+    "GeometryNodeSimulationOutput": "simulation_zone",
+    "GeometryNodeRepeatInput": "repeat_zone",
+    "GeometryNodeRepeatOutput": "repeat_zone",
+    "GeometryNodeForeachGeometryElementInput": "foreach_zone",
+    "GeometryNodeForeachGeometryElementOutput": "foreach_zone",
+    "GeometryNodeBakeNode": "bake_node",
+}
+
+
 NODE_PROPERTY_ALIASES = {
     "use_clamp": "clamp",
 }
@@ -118,6 +147,50 @@ class _BuildImportState:
         self.group_name_usage = {}
 
 
+STRUCTURAL_NODE_SPECS = {
+    "GeometryNodeSimulationInput": {
+        "kind": "zone",
+        "owner_type": "GeometryNodeSimulationOutput",
+        "pair_type": "GeometryNodeSimulationInput",
+        "operator": "add_simulation_zone",
+    },
+    "GeometryNodeSimulationOutput": {
+        "kind": "zone",
+        "owner_type": "GeometryNodeSimulationOutput",
+        "pair_type": "GeometryNodeSimulationInput",
+        "operator": "add_simulation_zone",
+    },
+    "GeometryNodeRepeatInput": {
+        "kind": "zone",
+        "owner_type": "GeometryNodeRepeatOutput",
+        "pair_type": "GeometryNodeRepeatInput",
+        "operator": "add_repeat_zone",
+    },
+    "GeometryNodeRepeatOutput": {
+        "kind": "zone",
+        "owner_type": "GeometryNodeRepeatOutput",
+        "pair_type": "GeometryNodeRepeatInput",
+        "operator": "add_repeat_zone",
+    },
+    "GeometryNodeForeachGeometryElementInput": {
+        "kind": "zone",
+        "owner_type": "GeometryNodeForeachGeometryElementInput",
+        "pair_type": "GeometryNodeForeachGeometryElementOutput",
+        "operator": "add_foreach_geometry_element_zone",
+    },
+    "GeometryNodeForeachGeometryElementOutput": {
+        "kind": "zone",
+        "owner_type": "GeometryNodeForeachGeometryElementInput",
+        "pair_type": "GeometryNodeForeachGeometryElementOutput",
+        "operator": "add_foreach_geometry_element_zone",
+    },
+    "GeometryNodeBakeNode": {
+        "kind": "single_structural",
+        "operator": None,
+    },
+}
+
+
 def _create_build_import_state():
     # 建立一次匯入流程共用的狀態物件
     return _BuildImportState()
@@ -162,20 +235,31 @@ def _get_zone_pair_info(bl_idname):
     return ZONE_NODE_PAIR_INFO.get(bl_idname)
 
 
+def _get_structural_node_spec(bl_idname):
+    # 回傳 structural node 的建立規格
+    return STRUCTURAL_NODE_SPECS.get(bl_idname)
+
+
+def _is_structural_node_type(bl_idname):
+    # 判斷是否屬於需要特殊建立流程的結構型節點
+    return bl_idname in STRUCTURAL_NODE_SPECS
+
+
 def _warn_partial_node_support(node_data, warned_types, warnings):
     # 對已知尚未完整支援的節點類型給一次性警告
     if not isinstance(node_data, dict):
         return
 
     bl_idname = node_data.get("bl_idname")
-    if bl_idname in warned_types:
+    warning_key = PARTIALLY_SUPPORTED_WARNING_GROUPS.get(bl_idname, bl_idname)
+    if warning_key in warned_types:
         return
 
     message = PARTIALLY_SUPPORTED_NODE_WARNINGS.get(bl_idname)
     if not message:
         return
 
-    warned_types.add(bl_idname)
+    warned_types.add(warning_key)
     _record_warning(warnings, message)
 
 
@@ -190,6 +274,165 @@ def _find_paired_zone_node(node):
             return paired_node
 
     return None
+
+
+def _find_node_editor_context_for_tree(tree):
+    # 尋找可供 node operator 使用的 Geometry Nodes Editor context
+    if tree is None:
+        return None
+
+    window_manager = getattr(bpy.context, "window_manager", None)
+    if window_manager is None:
+        return None
+
+    for window in window_manager.windows:
+        screen = getattr(window, "screen", None)
+        if screen is None:
+            continue
+
+        for area in screen.areas:
+            if getattr(area, "type", None) != "NODE_EDITOR":
+                continue
+
+            for space in area.spaces:
+                if getattr(space, "type", None) != "NODE_EDITOR":
+                    continue
+                if getattr(space, "tree_type", "") != "GeometryNodeTree":
+                    continue
+
+                region = next((region for region in area.regions if getattr(region, "type", None) == "WINDOW"), None)
+                if region is None:
+                    continue
+
+                return {
+                    "window": window,
+                    "screen": screen,
+                    "area": area,
+                    "region": region,
+                    "space_data": space,
+                }
+
+    return None
+
+
+def _build_node_operator_override(tree):
+    # 建立 node operator 所需的 context override
+    editor_context = _find_node_editor_context_for_tree(tree)
+    if editor_context is None:
+        return None
+
+    override = dict(editor_context)
+    override["node_tree"] = tree
+    override["edit_tree"] = tree
+    return override
+
+
+def _call_geometry_nodes_operator(tree, operator_name):
+    # 安全呼叫 Blender Geometry Nodes operator
+    operator = getattr(getattr(bpy.ops, "node", None), operator_name, None)
+    if operator is None:
+        raise ValueError(f"找不到 Blender node operator: {operator_name}")
+
+    override = _build_node_operator_override(tree)
+    if override is None:
+        raise ValueError("找不到可用的 Geometry Nodes Editor context，無法呼叫結構型節點 operator")
+
+    with bpy.context.temp_override(**override):
+        return operator()
+
+
+def _call_geometry_nodes_operator_for_node(tree, node, operator_name):
+    # 以指定節點作為 active node 呼叫 Blender Geometry Nodes operator
+    operator = getattr(getattr(bpy.ops, "node", None), operator_name, None)
+    if operator is None:
+        raise ValueError(f"找不到 Blender node operator: {operator_name}")
+
+    override = _build_node_operator_override(tree)
+    if override is None:
+        raise ValueError("找不到可用的 Geometry Nodes Editor context，無法呼叫結構型節點 operator")
+
+    previous_active = getattr(tree.nodes, "active", None)
+    previous_selection = {item.as_pointer(): bool(item.select) for item in tree.nodes}
+
+    try:
+        for item in tree.nodes:
+            item.select = False
+        node.select = True
+        tree.nodes.active = node
+
+        override["active_node"] = node
+        override["selected_nodes"] = [node]
+        override["node"] = node
+
+        with bpy.context.temp_override(**override):
+            return operator()
+    finally:
+        for item in tree.nodes:
+            item.select = previous_selection.get(item.as_pointer(), False)
+        try:
+            tree.nodes.active = previous_active
+        except Exception:
+            pass
+
+
+def _snapshot_tree_nodes(tree):
+    # 建立目前 node tree 內節點快照，供 operator 建立後比對差異
+    return {node.as_pointer(): node for node in tree.nodes}
+
+
+def _get_new_nodes_from_snapshot(tree, previous_snapshot):
+    # 取得 operator 執行後新增的節點
+    previous_snapshot = previous_snapshot or {}
+    return [node for node in tree.nodes if node.as_pointer() not in previous_snapshot]
+
+
+def _resolve_zone_nodes_from_created(created_nodes, owner_type, pair_type):
+    # 從新建立節點中找出 owner 與 pair node
+    owner_node = None
+    pair_node = None
+
+    for node in created_nodes:
+        if getattr(node, "bl_idname", "") == owner_type and owner_node is None:
+            owner_node = node
+        elif getattr(node, "bl_idname", "") == pair_type and pair_node is None:
+            pair_node = node
+
+    if owner_node is not None and pair_node is None:
+        pair_node = _find_paired_zone_node(owner_node)
+
+    if pair_node is not None and owner_node is None:
+        owner_node = _find_paired_zone_node(pair_node)
+
+    return owner_node, pair_node
+
+
+def _create_zone_nodes_via_operator(tree, operator_name, owner_type, pair_type):
+    # 使用 Blender operator 建立 zone，再解析出真正的 paired nodes
+    snapshot = _snapshot_tree_nodes(tree)
+    _call_geometry_nodes_operator(tree, operator_name)
+    created_nodes = _get_new_nodes_from_snapshot(tree, snapshot)
+    owner_node, pair_node = _resolve_zone_nodes_from_created(created_nodes, owner_type, pair_type)
+
+    if owner_node is None or pair_node is None:
+        raise ValueError(f"operator {operator_name} 執行後無法解析 {owner_type} / {pair_type}")
+
+    return owner_node, pair_node
+
+
+def _create_bake_node_via_operator(tree, operator_name, expected_type="GeometryNodeBakeNode"):
+    # 使用 Blender operator 建立 Bake node
+    snapshot = _snapshot_tree_nodes(tree)
+    _call_geometry_nodes_operator(tree, operator_name)
+    created_nodes = _get_new_nodes_from_snapshot(tree, snapshot)
+
+    for node in created_nodes:
+        if getattr(node, "bl_idname", "") == expected_type:
+            return node
+
+    if len(created_nodes) == 1:
+        return created_nodes[0]
+
+    raise ValueError(f"operator {operator_name} 執行後無法解析 Bake node")
 
 
 def _apply_basic_node_fields(node, node_data, place_offset=(0.0, 0.0)):
@@ -272,20 +515,23 @@ def _merge_zone_owner_dynamic_items(owner_type, owner_data, pair_data):
                 if other_data.get(key) is not None:
                     merged_data[key] = other_data.get(key)
 
+    elif owner_type == "GeometryNodeForeachGeometryElementInput":
+        for key in ("input_items", "output_items", "generation_items"):
+            if key not in merged_data or merged_data.get(key) is None:
+                if other_data.get(key) is not None:
+                    merged_data[key] = other_data.get(key)
+
     return merged_data
 
 
-def _create_zone_node_pair(tree, primary_node_data, paired_node_data, strict_mode=False, warnings=None, place_offset=(0.0, 0.0)):
-    # 建立 zone 節點配對，優先讓 Blender 自動產生成對節點
-    primary_type = primary_node_data.get("bl_idname")
-    pair_info = _get_zone_pair_info(primary_type)
-    if pair_info is None:
-        raise ValueError(f"不是支援的 zone 節點類型: {primary_type}")
+def _apply_structural_single_node_data(node, node_data, strict_mode=False, warnings=None):
+    # 套用單一 structural node 的資料
+    _apply_basic_node_fields(node, node_data)
+    _apply_full_node_data(node, node_data, strict_mode=strict_mode, warnings=warnings)
 
-    owner_data = primary_node_data if primary_type == pair_info["owner_type"] else paired_node_data
-    other_data = paired_node_data if owner_data is primary_node_data else primary_node_data
-    owner_type = pair_info["owner_type"]
 
+def _create_zone_node_pair_fallback(tree, owner_type, strict_mode=False, warnings=None):
+    # operator 不可用時的舊式 fallback 建立法
     owner_node = tree.nodes.new(owner_type)
     paired_node = _find_paired_zone_node(owner_node)
 
@@ -293,6 +539,33 @@ def _create_zone_node_pair(tree, primary_node_data, paired_node_data, strict_mod
         fallback_pair_type = _get_zone_pair_info(owner_type)["pair_type"]
         paired_node = tree.nodes.new(fallback_pair_type)
         _raise_or_warn(strict_mode, warnings, f"{owner_type} 未自動建立配對節點，已退回手動建立")
+
+    return owner_node, paired_node
+
+
+def _create_zone_node_pair(tree, primary_node_data, paired_node_data, strict_mode=False, warnings=None, place_offset=(0.0, 0.0)):
+    # 建立 zone 節點配對，優先使用 Blender zone operator
+    primary_type = primary_node_data.get("bl_idname")
+    spec = _get_structural_node_spec(primary_type)
+    pair_info = _get_zone_pair_info(primary_type)
+    if pair_info is None or spec is None:
+        raise ValueError(f"不是支援的 zone 節點類型: {primary_type}")
+
+    owner_data = primary_node_data if primary_type == pair_info["owner_type"] else paired_node_data
+    other_data = paired_node_data if owner_data is primary_node_data else primary_node_data
+    owner_type = spec["owner_type"]
+    pair_type = spec["pair_type"]
+
+    try:
+        owner_node, paired_node = _create_zone_nodes_via_operator(tree, spec["operator"], owner_type, pair_type)
+    except Exception as exc:
+        _raise_or_warn(strict_mode, warnings, f"{owner_type} operator 建立失敗，已退回一般建立流程: {exc}")
+        owner_node, paired_node = _create_zone_node_pair_fallback(
+            tree,
+            owner_type,
+            strict_mode=strict_mode,
+            warnings=warnings,
+        )
 
     owner_node_data = owner_data if owner_node.bl_idname == owner_data.get("bl_idname") else other_data
     pair_node_data = other_data if owner_node_data is owner_data else owner_data
@@ -310,6 +583,38 @@ def _create_zone_node_pair(tree, primary_node_data, paired_node_data, strict_mod
         owner_node_data.get("id") or owner_node_data.get("name"): owner_node,
         pair_node_data.get("id") or pair_node_data.get("name"): paired_node,
     }
+
+
+def _create_structural_node_from_build_data(tree, node_data, strict_mode=False, warnings=None, place_offset=(0.0, 0.0)):
+    # 根據 structural node 規格建立節點
+    bl_idname = node_data.get("bl_idname")
+    spec = _get_structural_node_spec(bl_idname)
+    if spec is None:
+        raise ValueError(f"不是 structural node 類型: {bl_idname}")
+
+    if spec["kind"] == "single_structural":
+        operator_name = spec.get("operator")
+        if operator_name:
+            try:
+                node = _create_bake_node_via_operator(tree, operator_name, expected_type=bl_idname)
+            except Exception as exc:
+                _raise_or_warn(strict_mode, warnings, f"{bl_idname} operator 建立失敗，已退回一般建立流程: {exc}")
+                node = tree.nodes.new(bl_idname)
+        else:
+            node = tree.nodes.new(bl_idname)
+
+        _apply_basic_node_fields(node, node_data, place_offset=place_offset)
+        _apply_full_node_data(node, node_data, strict_mode=strict_mode, warnings=warnings)
+        return {node_data.get("id") or node_data.get("name"): node}
+
+    if spec["kind"] == "zone":
+        _raise_or_warn(strict_mode, warnings, f"zone 節點 {bl_idname} 缺少配對資料，已退回單節點建立")
+        node = tree.nodes.new(bl_idname)
+        _apply_basic_node_fields(node, node_data, place_offset=place_offset)
+        _apply_full_node_data(node, node_data, strict_mode=strict_mode, warnings=warnings)
+        return {node_data.get("id") or node_data.get("name"): node}
+
+    raise ValueError(f"不支援的 structural node kind: {spec['kind']}")
 
 
 def _get_active_object(context):
@@ -685,6 +990,32 @@ def _find_socket_by_name(sockets, socket_name):
     return None
 
 
+def _split_socket_name_suffix(socket_name):
+    # 支援 Blender 常見的重名 socket 參照格式，例如 Value_001 / Value.001
+    if not isinstance(socket_name, str):
+        return None, None
+
+    for separator in ("_", "."):
+        base_name, suffix, index_text = socket_name.rpartition(separator)
+        if suffix and base_name and index_text.isdigit():
+            return base_name, int(index_text)
+
+    return None, None
+
+
+def _find_socket_by_name_with_duplicate_index(sockets, socket_name):
+    # 依 Blender 重名編號規則尋找 socket，例如第二個 Value 可用 Value_001 指向
+    base_name, duplicate_index = _split_socket_name_suffix(socket_name)
+    if base_name is None or duplicate_index is None:
+        return None
+
+    matching_sockets = [socket for socket in sockets if getattr(socket, "name", None) == base_name]
+    if duplicate_index < 0 or duplicate_index >= len(matching_sockets):
+        return None
+
+    return matching_sockets[duplicate_index]
+
+
 def _normalize_socket_label(value):
     # 將 socket 名稱正規化，降低大小寫與空白差異造成的比對失敗
     if value is None:
@@ -754,6 +1085,10 @@ def _find_socket(sockets, socket_reference):
             if socket is not None:
                 return socket
 
+            socket = _find_socket_by_name_with_duplicate_index(sockets, socket_name)
+            if socket is not None:
+                return socket
+
             return _find_socket_by_name_fuzzy(sockets, socket_name)
 
         if socket_identifier:
@@ -770,6 +1105,10 @@ def _find_socket(sockets, socket_reference):
         return _find_socket_by_index(sockets, socket_reference)
 
     socket = _find_socket_by_name(sockets, socket_reference)
+    if socket is not None:
+        return socket
+
+    socket = _find_socket_by_name_with_duplicate_index(sockets, socket_reference)
     if socket is not None:
         return socket
 
@@ -1029,6 +1368,45 @@ def _find_node_callable(node, *method_names):
     return None
 
 
+def _ensure_zone_items_via_operator(node, collection_attr, items_data, operator_name, strict_mode=False, warnings=None):
+    # 對 Simulation / Repeat 優先使用 Blender zone item operator 建立動態項目
+    if node is None or not isinstance(items_data, list) or not items_data:
+        return False
+
+    active_items = getattr(node, collection_attr, None)
+    if active_items is None:
+        return False
+
+    tree = getattr(node, "id_data", None)
+    if tree is None:
+        return False
+
+    try:
+        while len(active_items) < len(items_data):
+            _call_geometry_nodes_operator_for_node(tree, node, operator_name)
+    except Exception as exc:
+        _raise_or_warn(strict_mode, warnings, f"{node.bl_idname}.{collection_attr} operator 建立失敗: {exc}")
+        return False
+
+    remove_fn = getattr(active_items, "remove", None)
+    while remove_fn is not None and len(active_items) > len(items_data):
+        try:
+            remove_fn(active_items[-1])
+        except Exception:
+            break
+
+    return True
+
+
+def _normalize_zone_item_socket_type(socket_type):
+    # 將 JSON 內的 NodeSocket idname 正規化成 zone item 真正可用的 enum 值
+    if not socket_type:
+        return "FLOAT"
+
+    normalized = ZONE_ITEM_SOCKET_TYPE_ALIASES.get(str(socket_type), socket_type)
+    return str(normalized).upper()
+
+
 def _ensure_node_collection_items(node, collection_attr, items_data, new_item_fn, strict_mode=False, warnings=None):
     # 通用動態項目集合管理器，處理各種節點的 dynamic socket item
     if not isinstance(items_data, list) or not items_data:
@@ -1101,7 +1479,7 @@ def _new_enum_item(collection, node, item_def):
 def _new_zone_item(collection, node, item_def):
     # Simulation / Repeat / Foreach zones: new(name, socket_type) or reversed
     name = item_def.get("name") or "Value"
-    socket_type = item_def.get("socket_type") or "NodeSocketFloat"
+    socket_type = _normalize_zone_item_socket_type(item_def.get("socket_type") or "NodeSocketFloat")
     try:
         collection.new(name, socket_type)
     except TypeError:
@@ -1117,7 +1495,7 @@ def _new_zone_item(collection, node, item_def):
 def _new_bake_item(collection, node, item_def):
     # GeometryNodeBakeNode: new(socket_type, name) or reversed
     name = item_def.get("name") or "Value"
-    socket_type = item_def.get("socket_type") or "NodeSocketFloat"
+    socket_type = _normalize_zone_item_socket_type(item_def.get("socket_type") or "NodeSocketFloat")
     try:
         collection.new(socket_type, name)
     except TypeError:
@@ -1170,10 +1548,12 @@ def _apply_dynamic_node_items(node, node_data, strict_mode=False, warnings=None)
 
     elif bl_idname in ("GeometryNodeSimulationInput", "GeometryNodeSimulationOutput"):
         items = _get_dynamic_items_data(node_data, "state_items")
+        _ensure_zone_items_via_operator(node, "state_items", items, "simulation_zone_item_add", strict_mode, warnings)
         _ensure_node_collection_items(node, "state_items", items, _new_zone_item, strict_mode, warnings)
 
     elif bl_idname in ("GeometryNodeRepeatInput", "GeometryNodeRepeatOutput"):
         items = _get_dynamic_items_data(node_data, "repeat_items")
+        _ensure_zone_items_via_operator(node, "repeat_items", items, "repeat_zone_item_add", strict_mode, warnings)
         _ensure_node_collection_items(node, "repeat_items", items, _new_zone_item, strict_mode, warnings)
 
     elif bl_idname == "GeometryNodeBakeNode":
@@ -1239,6 +1619,7 @@ def _ensure_node_dynamic_state_for_link(node, socket_reference, is_output, node_
         items = _get_dynamic_items_data(node_data, "state_items")
         if not items and lookup_token and lookup_token not in reserved:
             items = [{"name": socket_name or socket_identifier or "Value", "socket_type": "NodeSocketFloat"}]
+        _ensure_zone_items_via_operator(node, "state_items", items, "simulation_zone_item_add", strict_mode, warnings)
         _ensure_node_collection_items(node, "state_items", items, _new_zone_item, strict_mode, warnings)
 
     elif bl_idname in ("GeometryNodeRepeatInput", "GeometryNodeRepeatOutput"):
@@ -1246,6 +1627,7 @@ def _ensure_node_dynamic_state_for_link(node, socket_reference, is_output, node_
         items = _get_dynamic_items_data(node_data, "repeat_items")
         if not items and lookup_token and lookup_token not in reserved:
             items = [{"name": socket_name or socket_identifier or "Value", "socket_type": "NodeSocketFloat"}]
+        _ensure_zone_items_via_operator(node, "repeat_items", items, "repeat_zone_item_add", strict_mode, warnings)
         _ensure_node_collection_items(node, "repeat_items", items, _new_zone_item, strict_mode, warnings)
 
     elif bl_idname == "GeometryNodeBakeNode":
@@ -1542,6 +1924,16 @@ def _create_node_from_build_data(tree, node_data, strict_mode=False, warnings=No
     bl_idname = node_data.get("bl_idname")
     if not bl_idname:
         raise ValueError("節點缺少 bl_idname")
+
+    if _is_structural_node_type(bl_idname):
+        created_nodes = _create_structural_node_from_build_data(
+            tree,
+            node_data,
+            strict_mode=strict_mode,
+            warnings=warnings,
+            place_offset=place_offset,
+        )
+        return created_nodes[node_data.get("id") or node_data.get("name")]
 
     node = tree.nodes.new(bl_idname)
     _apply_basic_node_fields(node, node_data, place_offset=place_offset)

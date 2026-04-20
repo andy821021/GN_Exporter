@@ -1,0 +1,64 @@
+{
+  "format": "geometry_nodes_ai_build",
+  "format_version": 3,
+  "clear_existing_nodes": true,
+  "strict_mode": false,
+  "nodes": [
+    {
+      "id": "group_input",
+      "name": "Group Input",
+      "bl_idname": "NodeGroupInput",
+      "location": [-700, -120]
+    },
+    {
+      "id": "repeat_input",
+      "name": "Repeat Input A",
+      "bl_idname": "GeometryNodeRepeatInput",
+      "location": [-260, -120]
+    },
+    {
+      "id": "math_add",
+      "name": "Add Repeat",
+      "bl_idname": "ShaderNodeMath",
+      "location": [0, -120],
+      "properties": {
+        "operation": "ADD"
+      },
+      "inputs": {
+        "Value_001": 1.0
+      }
+    },
+    {
+      "id": "repeat_output",
+      "name": "Repeat Output B",
+      "bl_idname": "GeometryNodeRepeatOutput",
+      "location": [250, -120],
+      "repeat_items": [
+        {
+          "name": "RepeatValue",
+          "socket_type": "NodeSocketFloat"
+        }
+      ]
+    },
+    {
+      "id": "group_output",
+      "name": "Group Output",
+      "bl_idname": "NodeGroupOutput",
+      "location": [520, -120]
+    }
+  ],
+  "links": [
+    {
+      "from_node": "repeat_input",
+      "from_socket": { "name": "RepeatValue" },
+      "to_node": "math_add",
+      "to_socket": { "name": "Value" }
+    },
+    {
+      "from_node": "math_add",
+      "from_socket": { "name": "Value" },
+      "to_node": "repeat_output",
+      "to_socket": { "name": "RepeatValue" }
+    }
+  ]
+}
