@@ -2351,6 +2351,229 @@ def _build_missing_socket_warning(node, socket_reference, is_output):
     )
 
 
+def _record_issue_marker(issue_markers, kind, message, node_name=None, other_node_name=None, link_data=None):
+    # 收集需要在 GN 內用醒目 Frame 標記的位置
+    if issue_markers is None:
+        return
+
+    dedupe_key = None
+    if kind in {"Ambiguous Input Socket", "Ambiguous Output Socket"}:
+        socket_name = None
+        if kind == "Ambiguous Input Socket":
+            socket_ref = link_data.get("to_socket") if isinstance(link_data, dict) else None
+        else:
+            socket_ref = link_data.get("from_socket") if isinstance(link_data, dict) else None
+
+        if isinstance(socket_ref, dict):
+            socket_name = socket_ref.get("identifier") or socket_ref.get("name")
+        else:
+            socket_name = socket_ref
+
+        dedupe_key = (kind, node_name or other_node_name)
+        if socket_name:
+            dedupe_key = (kind, node_name or other_node_name, socket_name)
+
+    marker_signature = (
+        dedupe_key or kind,
+        node_name,
+        other_node_name,
+    )
+
+    for existing_issue in issue_markers:
+        existing_signature = (
+            existing_issue.get("dedupe_key") or existing_issue.get("kind"),
+            existing_issue.get("node_name"),
+            existing_issue.get("other_node_name"),
+        )
+        if existing_signature == marker_signature:
+            return
+
+    issue_markers.append({
+        "kind": kind,
+        "dedupe_key": dedupe_key,
+        "message": message,
+        "node_name": node_name,
+        "other_node_name": other_node_name,
+        "link_data": link_data,
+    })
+
+
+def _summarize_issue_label(issue):
+    # 將標記文字縮短成節點內容易辨識的短標籤
+    if not isinstance(issue, dict):
+        return "Import Issue"
+
+    kind = issue.get("kind") or "Issue"
+    link_data = issue.get("link_data") or {}
+
+    if kind == "Ambiguous Input Socket":
+        socket_name = (
+            (link_data.get("to_socket") or {}).get("name")
+            if isinstance(link_data.get("to_socket"), dict)
+            else link_data.get("to_socket")
+        ) or "Socket"
+        return f"⚠ Input: {socket_name}"
+
+    if kind == "Ambiguous Output Socket":
+        socket_name = (
+            (link_data.get("from_socket") or {}).get("name")
+            if isinstance(link_data.get("from_socket"), dict)
+            else link_data.get("from_socket")
+        ) or "Socket"
+        return f"⚠ Output: {socket_name}"
+
+    short_map = {
+        "Missing Node": "⚠ Missing Node",
+        "Missing Output Socket": "⚠ Missing Output",
+        "Missing Input Socket": "⚠ Missing Input",
+        "Link Create Failed": "⚠ Link Failed",
+        "Node Create Failed": "⚠ Node Failed",
+        "Zone Create Failed": "⚠ Zone Failed",
+    }
+    return short_map.get(kind, f"⚠ {kind}")
+
+
+def _truncate_issue_label(message, max_length=48):
+    # 避免 Frame 標籤太長
+    if not message:
+        return "Import Issue"
+
+    text = str(message).replace("\n", " ").strip()
+    if len(text) <= max_length:
+        return text
+
+    return text[: max_length - 3] + "..."
+
+
+def _get_issue_anchor_location(node):
+    # 取得標記 Frame 的參考位置
+    if node is None:
+        return 0.0, 0.0, 220.0, 140.0
+
+    try:
+        location_x = float(node.location.x)
+        location_y = float(node.location.y)
+    except Exception:
+        location_x = 0.0
+        location_y = 0.0
+
+    try:
+        width = max(float(getattr(node, "width", 160.0)), 180.0)
+    except Exception:
+        width = 180.0
+
+    try:
+        height = max(float(getattr(node, "height", 100.0)), 120.0)
+    except Exception:
+        height = 120.0
+
+    return location_x, location_y, width, height
+
+
+def _get_issue_parent_frame(node):
+    # 優先將提示標記掛到問題節點所在的父 Frame 內
+    if node is None:
+        return None
+
+    parent_node = getattr(node, "parent", None)
+    if parent_node is not None and getattr(parent_node, "bl_idname", "") == "NodeFrame":
+        return parent_node
+
+    if getattr(node, "bl_idname", "") == "NodeFrame":
+        return node
+
+    return None
+
+
+def _get_issue_marker_location(anchor_node, index):
+    # 讓小型警告標記分散排列，避免堆在同一點
+    if anchor_node is None:
+        return -1200.0, 800.0 + ((index - 1) * -140.0)
+
+    try:
+        anchor_x = float(anchor_node.location.x)
+        anchor_y = float(anchor_node.location.y)
+    except Exception:
+        anchor_x = 0.0
+        anchor_y = 0.0
+
+    column = (index - 1) % 3
+    row = (index - 1) // 3
+    return anchor_x - 60.0 + (column * 140.0), anchor_y + 30.0 - (row * 90.0)
+
+
+def _make_issue_frame_name(tree, index):
+    # 產生不衝突的 issue frame 名稱
+    base_name = f"IMPORT_WARNING_{index:02d}"
+    candidate = base_name
+    suffix = 1
+
+    while tree.nodes.get(candidate) is not None:
+        candidate = f"{base_name}_{suffix:02d}"
+        suffix += 1
+
+    return candidate
+
+
+def _create_issue_marker_frames(tree, issue_markers, node_map):
+    # 在匯入失敗位置建立醒目黃色 Frame，方便直接在 GN 內查看
+    if not issue_markers:
+        return
+
+    anchor_issue_counts = {}
+
+    for issue in issue_markers:
+        anchor_node = None
+
+        node_name = issue.get("node_name")
+        other_node_name = issue.get("other_node_name")
+
+        if node_name:
+            anchor_node = node_map.get(node_name)
+
+        if anchor_node is None and other_node_name:
+            anchor_node = node_map.get(other_node_name)
+
+        anchor_key = node_name or other_node_name or "__fallback__"
+        anchor_issue_counts[anchor_key] = anchor_issue_counts.get(anchor_key, 0) + 1
+        local_index = anchor_issue_counts[anchor_key]
+
+        location_x, location_y = _get_issue_marker_location(anchor_node, local_index)
+        width = 120.0
+        height = 60.0
+        parent_frame = _get_issue_parent_frame(anchor_node)
+
+        try:
+            frame = tree.nodes.new("NodeFrame")
+        except Exception:
+            continue
+
+        if parent_frame is not None:
+            try:
+                frame.parent = parent_frame
+            except Exception:
+                pass
+
+        frame.name = _make_issue_frame_name(tree, sum(anchor_issue_counts.values()))
+        frame.label = _truncate_issue_label(_summarize_issue_label(issue), max_length=28)
+        frame.location = (location_x, location_y)
+        frame.width = width
+        frame.height = height
+        frame.use_custom_color = True
+        frame.color = (1.0, 0.85, 0.1)
+        frame.label_size = 14
+        frame.shrink = True
+
+        try:
+            frame["gn_import_issue"] = True
+            frame["gn_import_issue_kind"] = issue.get("kind", "")
+            frame["gn_import_issue_message"] = issue.get("message", "")
+            if issue.get("link_data") is not None:
+                frame["gn_import_issue_link"] = json.dumps(issue["link_data"], ensure_ascii=False)
+        except Exception:
+            pass
+
+
 def _apply_node_parent_relations(node_map, node_data_map, strict_mode=False, warnings=None, place_offset=(0.0, 0.0)):
     # 所有節點建立完成後，再還原 NodeFrame 父子關係
     unresolved_ids = {
@@ -2435,6 +2658,7 @@ def _import_tree_from_build_json(tree, data, clear_existing, base_filepath=None,
         place_offset = _coerce_vector2(data.get("place_offset"), default=(0.0, 0.0))
 
         warnings = []
+        issue_markers = []
 
         if append_mode:
             clear_existing = False
@@ -2493,7 +2717,15 @@ def _import_tree_from_build_json(tree, data, clear_existing, base_filepath=None,
                             place_offset=place_offset,
                         )
                     except Exception as exc:
-                        _raise_or_warn(strict_mode, warnings, f"建立 zone 節點失敗 index={index}: {exc}")
+                        message = f"建立 zone 節點失敗 index={index}: {exc}"
+                        _raise_or_warn(strict_mode, warnings, message)
+                        _record_issue_marker(
+                            issue_markers,
+                            kind="Zone Create Failed",
+                            message=message,
+                            node_name=node_data.get("id") or node_data.get("name"),
+                            other_node_name=partner_data.get("id") or partner_data.get("name") if partner_data else None,
+                        )
                         continue
 
                     node_map.update(created_zone_nodes)
@@ -2519,7 +2751,14 @@ def _import_tree_from_build_json(tree, data, clear_existing, base_filepath=None,
                     import_state=import_state,
                 )
             except Exception as exc:
-                _raise_or_warn(strict_mode, warnings, f"建立節點失敗 index={index}: {exc}")
+                message = f"建立節點失敗 index={index}: {exc}"
+                _raise_or_warn(strict_mode, warnings, message)
+                _record_issue_marker(
+                    issue_markers,
+                    kind="Node Create Failed",
+                    message=message,
+                    node_name=node_data.get("id") or node_data.get("name"),
+                )
                 continue
 
             node_map[node_id] = node
@@ -2538,7 +2777,16 @@ def _import_tree_from_build_json(tree, data, clear_existing, base_filepath=None,
             to_node = node_map.get(link_data.get("to_node"))
 
             if from_node is None or to_node is None:
-                _raise_or_warn(strict_mode, warnings, f"連線節點不存在: {link_data}")
+                message = f"連線節點不存在: {link_data}"
+                _raise_or_warn(strict_mode, warnings, message)
+                _record_issue_marker(
+                    issue_markers,
+                    kind="Missing Node",
+                    message=message,
+                    node_name=link_data.get("from_node"),
+                    other_node_name=link_data.get("to_node"),
+                    link_data=link_data,
+                )
                 continue
 
             from_socket_reference = _get_link_socket_reference(link_data, "from")
@@ -2548,8 +2796,24 @@ def _import_tree_from_build_json(tree, data, clear_existing, base_filepath=None,
             to_duplicate_hint = _build_duplicate_socket_hint(to_node, to_socket_reference, False) if to_node is not None else None
             if from_duplicate_hint:
                 _record_warning(warnings, from_duplicate_hint)
+                _record_issue_marker(
+                    issue_markers,
+                    kind="Ambiguous Output Socket",
+                    message=from_duplicate_hint,
+                    node_name=link_data.get("from_node"),
+                    other_node_name=link_data.get("to_node"),
+                    link_data=link_data,
+                )
             if to_duplicate_hint:
                 _record_warning(warnings, to_duplicate_hint)
+                _record_issue_marker(
+                    issue_markers,
+                    kind="Ambiguous Input Socket",
+                    message=to_duplicate_hint,
+                    node_name=link_data.get("to_node"),
+                    other_node_name=link_data.get("from_node"),
+                    link_data=link_data,
+                )
 
             from_socket = _find_socket_with_dynamic_support(
                 from_node,
@@ -2569,10 +2833,28 @@ def _import_tree_from_build_json(tree, data, clear_existing, base_filepath=None,
             )
 
             if from_socket is None:
-                _raise_or_warn(strict_mode, warnings, _build_missing_socket_warning(from_node, from_socket_reference, True))
+                message = _build_missing_socket_warning(from_node, from_socket_reference, True)
+                _raise_or_warn(strict_mode, warnings, message)
+                _record_issue_marker(
+                    issue_markers,
+                    kind="Missing Output Socket",
+                    message=message,
+                    node_name=link_data.get("from_node"),
+                    other_node_name=link_data.get("to_node"),
+                    link_data=link_data,
+                )
 
             if to_socket is None:
-                _raise_or_warn(strict_mode, warnings, _build_missing_socket_warning(to_node, to_socket_reference, False))
+                message = _build_missing_socket_warning(to_node, to_socket_reference, False)
+                _raise_or_warn(strict_mode, warnings, message)
+                _record_issue_marker(
+                    issue_markers,
+                    kind="Missing Input Socket",
+                    message=message,
+                    node_name=link_data.get("to_node"),
+                    other_node_name=link_data.get("from_node"),
+                    link_data=link_data,
+                )
 
             if from_socket is None or to_socket is None:
                 continue
@@ -2580,7 +2862,18 @@ def _import_tree_from_build_json(tree, data, clear_existing, base_filepath=None,
             try:
                 tree.links.new(from_socket, to_socket)
             except Exception as exc:
-                _raise_or_warn(strict_mode, warnings, f"建立連線失敗: {link_data}: {exc}")
+                message = f"建立連線失敗: {link_data}: {exc}"
+                _raise_or_warn(strict_mode, warnings, message)
+                _record_issue_marker(
+                    issue_markers,
+                    kind="Link Create Failed",
+                    message=message,
+                    node_name=link_data.get("to_node"),
+                    other_node_name=link_data.get("from_node"),
+                    link_data=link_data,
+                )
+
+        _create_issue_marker_frames(tree, issue_markers, node_map)
 
         return warnings
     finally:
